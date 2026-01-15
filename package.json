@@ -1,0 +1,13 @@
+{
+  "name": "payload-cms-http-client",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "node --no-warnings --loader ts-node/esm test/run-tests.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
