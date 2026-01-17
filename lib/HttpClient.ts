@@ -4,6 +4,7 @@ import { PayloadError } from "./PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
 import type { Json } from "./types/Json";
 import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
+import { Projections } from "./projections/Projections.js";
 
 export class HttpClient {
   private _baseUrl: string;
@@ -76,11 +77,13 @@ export class HttpClient {
   * @returns {string} The URL with an appended query string, if applicable.
   */
   private _appendQueryString(url: string, queryBuilder?: QueryBuilder): string {
-    let queryString = '';
-    
-    if(queryBuilder !== undefined) {
-      queryString = this._encoder.stringify(queryBuilder.build() as Record<string, unknown>);
+    if(queryBuilder === undefined) {
+      return url;
     }
+
+    const dto = queryBuilder.build();
+    const params = Projections.queryParameters(dto);
+    const queryString = this._encoder.stringify(params);
     
     return `${url}${queryString}`;
   }

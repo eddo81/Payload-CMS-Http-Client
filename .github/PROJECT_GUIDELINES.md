@@ -87,6 +87,31 @@ Our abstractions should mirror these as closely as possible in semantics and beh
   * Unsupported primitives (`symbol`, `bigint`) are skipped silently.
   * Unencoded brackets (`[]`) are acceptable and considered **semantically equivalent** to percent-encoded (`%5B%5D`) forms, as Payload CMS accepts both.
 
+### Domain → Transport Projection Boundary
+
+Domain-level DTOs (e.g. `QueryParametersDTO`) **must not be serialized directly**.
+
+Before any query parameters are encoded or appended to an HTTP request, they must be
+**explicitly projected** into a plain, transport-safe object via a projection layer.
+
+This enforces a clear boundary between:
+
+* **Domain intent** (builders, specifications, DTOs)
+* **Transport representation** (plain objects, query strings, HTTP)
+
+#### Rules
+
+* `QueryBuilder.build()` returns a **domain DTO**, not a serializable object.
+* Serialization utilities (e.g. `QueryStringEncoder`) operate **only on plain objects**
+  (`Record<string, unknown>`), never on domain DTOs.
+* Projection is performed explicitly via the `Projections` hub:
+
+  ```ts
+  const dto = queryBuilder.build();
+  const params = Projections.queryParameters(dto);
+  const query = encoder.stringify(params);
+  ```
+
 ---
 
 ## 3.1 JoinBuilder Design Notes
