@@ -31,15 +31,6 @@ export class QueryParametersMapper {
   static toJson(dto: QueryParametersDTO): Json {
     const result: Json = {};
 
-    // Copy only defined, meaningful values
-    if (dto.where !== undefined) {
-      result.where = dto.where;
-    }
-
-    if (dto.joins !== undefined) {
-      result.joins = dto.joins;
-    }
-
     if (dto.limit !== undefined) {
       result.limit = dto.limit;
     }
@@ -52,16 +43,32 @@ export class QueryParametersMapper {
       result.sort = dto.sort;
     }
 
-    if (dto.select !== undefined) {
-      result.select = dto.select;
-    }
-
     if (dto.depth !== undefined) {
       result.depth = dto.depth;
     }
 
     if (dto.locale !== undefined) {
       result.locale = dto.locale;
+    }
+
+    if (dto['fallback-locale'] !== undefined) {
+      result['fallback-locale'] = dto['fallback-locale'];
+    }
+
+    if (dto.select !== undefined) {
+      result.select = dto.select;
+    }
+
+    if (dto.populate !== undefined) {
+      result.populate = dto.populate;
+    }
+
+    if (dto.where !== undefined) {
+      result.where = dto.where;
+    }
+
+    if (dto.joins !== undefined) {
+      result.joins = dto.joins;
     }
 
     return result;
