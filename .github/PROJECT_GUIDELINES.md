@@ -87,30 +87,40 @@ Our abstractions should mirror these as closely as possible in semantics and beh
   * Unsupported primitives (`symbol`, `bigint`) are skipped silently.
   * Unencoded brackets (`[]`) are acceptable and considered **semantically equivalent** to percent-encoded (`%5B%5D`) forms, as Payload CMS accepts both.
 
-### Domain → Transport Projection Boundary
+## Domain ↔ Transport Mapping Boundary
 
-Domain-level DTOs (e.g. `QueryParametersDTO`) **must not be serialized directly**.
+Domain-level DTOs **must not contain transport logic** and **must not be serialized directly**.
 
-Before any query parameters are encoded or appended to an HTTP request, they must be
-**explicitly projected** into a plain, transport-safe object via a projection layer.
+All transformations between domain representations and transport-safe data
+(JSON, query parameters, HTTP payloads) are handled explicitly by **mapper classes**.
 
 This enforces a clear boundary between:
 
-* **Domain intent** (builders, specifications, DTOs)
-* **Transport representation** (plain objects, query strings, HTTP)
+- **Domain intent**
+  - Builders
+  - Specifications
+  - DTOs (plain data holders)
+- **Transport representation**
+  - Plain JSON objects
+  - Query parameter objects
+  - HTTP payloads and responses
 
-#### Rules
+### Rules
 
-* `QueryBuilder.build()` returns a **domain DTO**, not a serializable object.
-* Serialization utilities (e.g. `QueryStringEncoder`) operate **only on plain objects**
-  (`Record<string, unknown>`), never on domain DTOs.
-* Projection is performed explicitly via the `Projections` hub:
+- `QueryBuilder.build()` returns a **domain DTO**, never a serializable object.
+- DTOs are **dumb containers** with public fields and no transport logic.
+- All inbound transformations occur in `*Mapper.fromJson(...)`.
+- All outbound transformations occur in `*Mapper.toJson(...)`.
+- Low-level utilities (e.g. `QueryStringEncoder`) operate **only on plain objects**.
+- Mapping is **explicit**, never implicit or hidden inside DTOs.
 
-  ```ts
-  const dto = queryBuilder.build();
-  const params = Projections.queryParameters(dto);
-  const query = encoder.stringify(params);
-  ```
+### Example
+
+```ts
+const dto = queryBuilder.build();
+const params = QueryParametersMapper.toJson(dto);
+const query = encoder.stringify(params);
+```
 
 ---
 

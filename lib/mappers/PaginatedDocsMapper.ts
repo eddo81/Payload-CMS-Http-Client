@@ -51,35 +51,35 @@ export class PaginatedDocsMapper {
     }
       
     if(typeof data['hasNextPage'] === 'boolean') {
-      dto.hasNextPage = data['hasNextPage']
+      dto.hasNextPage = data['hasNextPage'];
     }
 
     if(typeof data['hasPrevPage'] === 'boolean') {
-      dto.hasPrevPage = data['hasPrevPage']
+      dto.hasPrevPage = data['hasPrevPage'];
     }
 
     if(typeof data['limit'] === 'number') {
-      dto.limit = data['limit']
+      dto.limit = data['limit'];
     }
 
     if(typeof data['totalDocs'] === 'number') {
-      dto.totalDocs = data['totalDocs']
+      dto.totalDocs = data['totalDocs'];
     }
 
     if(typeof data['totalPages'] === 'number') {
-      dto.totalPages = data['totalPages']
+      dto.totalPages = data['totalPages'];
     }
 
     if(typeof data['page'] === 'number') {
-      dto.page = data['page']
+      dto.page = data['page'];
     }
 
     if(typeof data['nextPage'] === 'number') {
-      dto.nextPage = data['nextPage']
+      dto.nextPage = data['nextPage'];
     }
 
     if(typeof data['prevPage'] === 'number') {
-      dto.prevPage = data['prevPage']
+      dto.prevPage = data['prevPage'];
     }
 
     return dto;
