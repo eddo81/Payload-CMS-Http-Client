@@ -1,6 +1,7 @@
 import { WhereClause } from "./internal/WhereClause.js";
 import { JoinClause } from "./internal/JoinClause.js";
 import type { Operator } from "./types/Operator.js";
+import type { Json } from "./types/Json.js";
 
 /**
  * JoinBuilder
@@ -227,12 +228,12 @@ export class JoinBuilder {
  /**
   * Builds the joins object for the query.
   *
-  * @returns {Record<string, unknown> | false | undefined}
+  * @returns {Json | false | undefined}
   * - `undefined` if no join operations were added
   * - `false` if joins were explicitly disabled
   * - A joins object compatible with Payload's REST API otherwise
   */
-  build(): Record<string, unknown> | false | undefined {
+  build(): Json | false | undefined {
     if(this._disabled) {
       return false;
     }
@@ -241,7 +242,7 @@ export class JoinBuilder {
       return undefined;
     }
 
-    const result: Record<string, unknown> = {};
+    const result: Json = {};
 
     this._clauses.forEach((clause) => {
       Object.assign(result, clause.build());

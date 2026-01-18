@@ -312,7 +312,7 @@ export class QueryBuilder {
     const where = this._whereBuilder.build();
     const joins = this._joinBuilder.build();
 
-    if (where !== null) {
+    if (where !== undefined) {
       this._queryParameters.where = where;
     }
 

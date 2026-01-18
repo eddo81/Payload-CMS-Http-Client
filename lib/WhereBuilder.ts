@@ -3,6 +3,7 @@ import { AndClause } from "./internal/AndClause.js";
 import { OrClause } from "./internal/OrClause.js";
 import { WhereClause } from "./internal/WhereClause.js";
 import type { Operator } from "./types/Operator.js";
+import type { Json } from "./types/Json.js";
 
 /**
  * WhereBuilder
@@ -59,12 +60,12 @@ export class WhereBuilder {
    * Serializes the entire where/and/or tree into a flat
    * key-value structure ready for query string encoding.
    */
-  build(): Record<string, unknown> | null {
+  build(): Json | undefined {
     if(this._clauses.length === 0) {
-      return null;
+      return undefined;
     } 
 
-    const result: Record<string, unknown> = {};
+    const result: Json = {};
 
     this._clauses.forEach(clause => {
       Object.assign(result, clause.build());

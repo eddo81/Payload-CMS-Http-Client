@@ -1,3 +1,5 @@
+import { Json } from "../types/Json";
+
 /**
  * QueryParametersDTO
  * 
@@ -12,6 +14,6 @@ export class QueryParametersDTO {
   'fallback-locale'?: string;
   select?: string;
   populate?: string;
-  where?: Record<string, unknown>;
-  joins?: Record<string, unknown> | false;
+  where?: Json;
+  joins?: Json | false;
 }
