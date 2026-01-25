@@ -1,15 +1,12 @@
 import { QueryBuilder } from '../lib/QueryBuilder.ts';
 import { QueryStringEncoder } from '../lib/internal/utils/QueryStringEncoder.ts';
-import { QueryParametersMapper } from '../lib/mappers/QueryParametersMapper.ts';
-import { Json } from '../lib/types/Json.ts';
-
 import { TestHarness } from './TestHarness.ts';
 
 const encoder = new QueryStringEncoder();
 const harness = new TestHarness();
 
 harness.add('JoinBuilder should produce correct nested object structure', () => {
-  const dto = new QueryBuilder()
+  const params = new QueryBuilder()
     .join(joinBuilder => { 
       joinBuilder
         .where('posts', 'author', 'equals', 'Alice')
@@ -18,9 +15,7 @@ harness.add('JoinBuilder should produce correct nested object structure', () => 
     })
     .build();
 
-  const json: Json = QueryParametersMapper.toJson(dto); 
-
-  const actual = encoder.stringify(json);
+  const actual = encoder.stringify(params);
 
   const expected = encoder.stringify({
     joins: {
@@ -38,7 +33,7 @@ harness.add('JoinBuilder should produce correct nested object structure', () => 
 });
 
 harness.add('JoinBuilder should overwrite duplicate results', () => {
-  const dto = new QueryBuilder()
+  const params = new QueryBuilder()
     .join(joinBuilder => { 
       joinBuilder
         .where('posts', 'author', 'equals', 'Alice')
@@ -46,9 +41,7 @@ harness.add('JoinBuilder should overwrite duplicate results', () => {
     })
     .build();
 
-  const json: Json = QueryParametersMapper.toJson(dto); 
-
-  const actual = encoder.stringify(json);
+  const actual = encoder.stringify(params);
 
   const expected = encoder.stringify({
     joins: {
@@ -64,16 +57,14 @@ harness.add('JoinBuilder should overwrite duplicate results', () => {
 });
 
 harness.add('JoinBuilder should omit empty values', () => {
-  const dto = new QueryBuilder()
+  const params = new QueryBuilder()
     .join(joinBuilder => { 
       joinBuilder
         .sort('posts', '');
     })
     .build();
 
-  const json: Json = QueryParametersMapper.toJson(dto); 
-
-  const actual = encoder.stringify(json);
+  const actual = encoder.stringify(params);
 
   const expected = encoder.stringify({});
 
@@ -81,7 +72,7 @@ harness.add('JoinBuilder should omit empty values', () => {
 });
 
 harness.add('JoinBuilder should support multiple join fields', () => {
-  const dto = new QueryBuilder()
+  const params = new QueryBuilder()
     .join(joinBuilder => {
       joinBuilder
         .limit('posts', 5)
@@ -91,9 +82,7 @@ harness.add('JoinBuilder should support multiple join fields', () => {
     })
     .build();
 
-  const json: Json = QueryParametersMapper.toJson(dto);
-
-  const actual = encoder.stringify(json);
+  const actual = encoder.stringify(params);
 
   const expected = encoder.stringify({
     joins: {
@@ -112,7 +101,7 @@ harness.add('JoinBuilder should support multiple join fields', () => {
 });
 
 harness.add('JoinBuilder should ignore invalid operations but keep valid ones', () => {
-  const dto = new QueryBuilder()
+  const params = new QueryBuilder()
     .join(joinBuilder => {
       joinBuilder
         .sort('posts', '')
@@ -120,9 +109,7 @@ harness.add('JoinBuilder should ignore invalid operations but keep valid ones', 
     })
     .build();
 
-  const json: Json = QueryParametersMapper.toJson(dto);
-
-  const actual = encoder.stringify(json);
+  const actual = encoder.stringify(params);
 
   const expected = encoder.stringify({
     joins: {
@@ -136,7 +123,7 @@ harness.add('JoinBuilder should ignore invalid operations but keep valid ones', 
 });
 
 harness.add('JoinBuilder should accumulate across multiple join() calls', () => {
-  const dto = new QueryBuilder()
+  const params = new QueryBuilder()
     .join(joinBuilder => {
       joinBuilder.limit('posts', 2);
     })
@@ -145,9 +132,7 @@ harness.add('JoinBuilder should accumulate across multiple join() calls', () => 
     })
     .build();
 
-  const json: Json = QueryParametersMapper.toJson(dto);
-
-  const actual = encoder.stringify(json);
+  const actual = encoder.stringify(params);
 
   const expected = encoder.stringify({
     joins: {

@@ -1,7 +1,7 @@
 import type { Operator } from "./types/Operator";
 import { WhereBuilder } from "./WhereBuilder.js";
 import { JoinBuilder } from "./JoinBuilder.js";
-import { QueryParametersDTO } from "./models/QueryParametersDTO.js";
+import type { Json } from "./types/Json.js";
 
 /**
  * QueryBuilder
@@ -14,7 +14,14 @@ import { QueryParametersDTO } from "./models/QueryParametersDTO.js";
  * for composing advanced query logic.
  */
 export class QueryBuilder {
-  private _queryParameters: QueryParametersDTO = new QueryParametersDTO();
+  private _limit?: number;
+  private _page?: number;
+  private _sort?: string;
+  private _depth?: number;
+  private _locale?: string;
+  private _fallbackLocale?: string;
+  private _select?: string;
+  private _populate?: string;
   private readonly _whereBuilder: WhereBuilder = new WhereBuilder();
   private readonly _joinBuilder: JoinBuilder = new JoinBuilder();
 
@@ -30,7 +37,7 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   limit(value: number): this {
-    this._queryParameters.limit = value;
+    this._limit = value;
 
     return this;
   }
@@ -48,7 +55,7 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   page(value: number): this {
-    this._queryParameters.page = value;
+    this._page = value;
 
     return this;
   }
@@ -66,11 +73,11 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   sort(field: string): this {
-    if (!this._queryParameters.sort) {
-      this._queryParameters.sort = field;
+    if (!this._sort) {
+      this._sort = field;
     } 
     else {
-      this._queryParameters.sort += `,${field}`;
+      this._sort += `,${field}`;
     }
 
     return this;
@@ -91,11 +98,11 @@ export class QueryBuilder {
   sortByDescending(field: string): this {
     const _field = field.startsWith('-') ? field : `-${field}`;
 
-    if (!this._queryParameters.sort) {
-      this._queryParameters.sort = _field;
+    if (!this._sort) {
+      this._sort = _field;
     } 
     else {
-      this._queryParameters.sort += `,${_field}`;
+      this._sort += `,${_field}`;
     }
 
     return this;
@@ -113,7 +120,7 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   depth(value: number): this {
-    this._queryParameters.depth = value;
+    this._depth = value;
 
     return this;
   }
@@ -130,7 +137,7 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   locale(value: string): this {
-    this._queryParameters.locale = value;
+    this._locale = value;
 
     return this;
   }
@@ -147,7 +154,7 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   fallbackLocale(value: string): this {
-    this._queryParameters['fallback-locale'] = value;
+    this._fallbackLocale = value;
 
     return this;
   }
@@ -170,11 +177,11 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   select(fields: string[]): this {
-    if (!this._queryParameters.select) {
-      this._queryParameters.select = fields.join(',');
+    if (!this._select) {
+      this._select = fields.join(',');
     } 
     else {
-      this._queryParameters.select += `,${fields.join(',')}`;
+      this._select += `,${fields.join(',')}`;
     }
 
     return this;
@@ -194,7 +201,7 @@ export class QueryBuilder {
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
   populate(fields: string[]): this {
-    this._queryParameters.populate = fields.join(',');
+    this._populate = fields.join(',');
 
     return this;
   }
@@ -293,9 +300,8 @@ export class QueryBuilder {
 
   /**
    * Build the final set of query parameters to be submitted to a PayloadCMS REST API 
-   * endpoint. Merges where-clauses and join-clauses into the QueryParametersDTO.
-   * The QueryParametersDTO needs be encoded into a query string before being 
-   * used in any HTTP requests upstream.
+   * endpoint. This method performs an outbound transport mapping from domain-level query
+   * intent into a JSON-compatible shape suitable for query string serialization.
    * 
    * @example
    * const query = new QueryBuilder();
@@ -306,20 +312,53 @@ export class QueryBuilder {
    *   
    * const params = query.build();
    * 
-   * @returns {QueryParametersDTO} A fully populated QueryParametersDTO instance.
+   * @returns {Json} A plain JSON object suitable for query string serialization.
    */
-  build(): QueryParametersDTO {
-    const where = this._whereBuilder.build();
-    const joins = this._joinBuilder.build();
+  build(): Json {
+    const where: Json | undefined = this._whereBuilder.build();
+    const joins: Json | false | undefined = this._joinBuilder.build();
+    const result: Json = {};
+
+    if (this._limit !== undefined) {
+      result.limit = this._limit;
+    }
+
+    if (this._page !== undefined) {
+      result.page = this._page;
+    }
+
+    if (this._sort !== undefined) {
+      result.sort = this._sort;
+    }
+
+    if (this._depth !== undefined) {
+      result.depth = this._depth;
+    }
+
+    if (this._locale !== undefined) {
+      result.locale = this._locale;
+    }
+
+    if (this._fallbackLocale !== undefined) {
+      result['fallback-locale'] = this._fallbackLocale;
+    }
+
+    if (this._select !== undefined) {
+      result.select = this._select;
+    }
+
+    if (this._populate !== undefined) {
+      result.populate = this._populate;
+    }
 
     if (where !== undefined) {
-      this._queryParameters.where = where;
+      result.where = where;
     }
 
     if (joins !== undefined) {
-      this._queryParameters.joins = joins;
+      result.joins = joins;
     }
 
-    return this._queryParameters;
+    return result;
   }
 }

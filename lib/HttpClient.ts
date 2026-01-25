@@ -3,7 +3,6 @@ import { DocumentDTO } from "./models/DocumentDTO.js";
 import { PayloadError } from "./PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
-import { QueryParametersMapper } from "./mappers/QueryParametersMapper.js";
 import { DocumentMapper } from "./mappers/DocumentMapper.js";
 import { PaginatedDocsMapper } from "./mappers/PaginatedDocsMapper.js";
 import type { Json } from "./types/Json";
@@ -83,8 +82,7 @@ export class HttpClient {
       return url;
     }
 
-    const dto = queryBuilder.build();
-    const params = QueryParametersMapper.toJson(dto);
+    const params = queryBuilder.build();
     const queryString = this._encoder.stringify(params);
     
     return `${url}${queryString}`;
@@ -176,7 +174,7 @@ export class HttpClient {
   }
 
   async find(slug: string, queryBuilder?: QueryBuilder): Promise<PaginatedDocsDTO> {
-    const url = this._appendQueryString(`${this._baseUrl}/api/${slug}`, queryBuilder);
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, queryBuilder);
     const json = await this._fetch(url) ?? {};
     const dto = PaginatedDocsMapper.fromJson(json);
     
@@ -184,7 +182,7 @@ export class HttpClient {
   }
 
   async findById(slug: string, id: string, queryBuilder?: QueryBuilder): Promise<DocumentDTO> {
-    const url = this._appendQueryString(`${this._baseUrl}/api/${slug}/${id}`, queryBuilder);
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`, queryBuilder);
     const json = await this._fetch(url) ?? {};
     const dto = DocumentMapper.fromJson(json);
     
