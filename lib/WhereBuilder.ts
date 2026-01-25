@@ -31,7 +31,7 @@ export class WhereBuilder {
 
     callback(builder);
 
-    this._clauses.push(new AndClause(builder.GetClauses()));
+    this._clauses.push(new AndClause(builder.getClauses()));
 
     return this;
   }
@@ -44,7 +44,7 @@ export class WhereBuilder {
 
     callback(builder);
 
-    this._clauses.push(new OrClause(builder.GetClauses()));
+    this._clauses.push(new OrClause(builder.getClauses()));
 
     return this;
   }
@@ -52,7 +52,7 @@ export class WhereBuilder {
   /**
    * Returns the list of built clauses.
    */
-  GetClauses(): IClause[] {
+  getClauses(): IClause[] {
     return this._clauses;
   }
 

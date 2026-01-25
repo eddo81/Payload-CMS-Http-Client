@@ -31,7 +31,7 @@
  * });
  *
  * // Output:
- * // "select=title,author&where[or][0][title][equals]=foo&where[or][1][title][equals]=bar"
+ * // "?select=title,author&where[or][0][title][equals]=foo&where[or][1][title][equals]=bar"
  * ```
  *
  * This class is designed for **cross-language portability** (TypeScript, Dart, C#),
@@ -43,12 +43,19 @@ export class QueryStringEncoder {
    *
    * This is the primary entry point for consumers. It returns an empty string
    * if the input object cannot be serialized or contains no valid entries.
+   * When a non-empty query string is produced, it is prefixed with `?`.
    *
    * @param {Record<string, unknown>} obj - The object to serialize into a query string.
-   * @returns The serialized query string (never `null`).
+   * @returns The serialized query string prefixed with `?`, or an empty string if no entries exist.
    */
   public stringify(obj: Record<string, unknown>): string {
-    return this._serialize(obj, '') ?? '';
+    const result = this._serialize(obj, '') ?? '';
+
+    if (result === '') {
+      return '';
+    }
+
+    return `?${result}`;
   }
 
   /**
@@ -80,7 +87,7 @@ export class QueryStringEncoder {
    * @returns A query string fragment, or `null` if the object contains no valid entries.
    */
   private _serialize(obj: Record<string, unknown>, prefix: string): string | null {
-    const segments: string[] = []
+    const segments: string[] = [];
 
     // Return early when hitting a non-object.
     if (typeof obj !== 'object' || obj === null) {
