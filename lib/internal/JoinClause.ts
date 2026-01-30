@@ -53,12 +53,14 @@ export class JoinClause implements IClause {
   * Creates a new JoinClause for a given join field.
   *
   * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {string} field - The initial join operation key (e.g. "limit", "sort").
-  * @param {unknown} value - The value for the join operation.
+  * @param {string} field - Optional initial join operation key (e.g. "limit", "sort").
+  * @param {unknown} value - Optional value for the join operation.
   */
-  constructor(on: string, field: string, value: unknown) {
+  constructor(on: string, field?: string, value?: unknown) {
     this.on = on;
-    this.set(field, value);
+    if (field !== undefined && value !== undefined) {
+      this.set(field, value);
+    }
   }
 
  /**

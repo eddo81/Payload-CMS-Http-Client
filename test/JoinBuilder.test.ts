@@ -146,6 +146,184 @@ harness.add('JoinBuilder should accumulate across multiple join() calls', () => 
   TestHarness.assertEqual(actual, expected);
 });
 
+harness.add('JoinBuilder should accumulate multiple where() on different fields', () => {
+  const params = new QueryBuilder()
+    .join(joinBuilder => {
+      joinBuilder
+        .where('posts', 'status', 'equals', 'published')
+        .where('posts', 'author', 'equals', 'Alice');
+    })
+    .build();
+
+  const actual = encoder.stringify(params);
+
+  const expected = encoder.stringify({
+    joins: {
+      posts: {
+        where: {
+          status: { equals: 'published' },
+          author: { equals: 'Alice' }
+        }
+      }
+    }
+  });
+
+  TestHarness.assertEqual(actual, expected);
+});
+
+harness.add('JoinBuilder should support nested and() groups', () => {
+  const params = new QueryBuilder()
+    .join(joinBuilder => {
+      joinBuilder.and('posts', group => {
+        group
+          .where('status', 'equals', 'published')
+          .where('author', 'equals', 'Alice');
+      });
+    })
+    .build();
+
+  const actual = encoder.stringify(params);
+
+  const expected = encoder.stringify({
+    joins: {
+      posts: {
+        where: {
+          and: [
+            { status: { equals: 'published' } },
+            { author: { equals: 'Alice' } }
+          ]
+        }
+      }
+    }
+  });
+
+  TestHarness.assertEqual(actual, expected);
+});
+
+harness.add('JoinBuilder should support nested or() groups', () => {
+  const params = new QueryBuilder()
+    .join(joinBuilder => {
+      joinBuilder.or('posts', group => {
+        group
+          .where('author', 'equals', 'Alice')
+          .where('author', 'equals', 'Bob');
+      });
+    })
+    .build();
+
+  const actual = encoder.stringify(params);
+
+  const expected = encoder.stringify({
+    joins: {
+      posts: {
+        where: {
+          or: [
+            { author: { equals: 'Alice' } },
+            { author: { equals: 'Bob' } }
+          ]
+        }
+      }
+    }
+  });
+
+  TestHarness.assertEqual(actual, expected);
+});
+
+harness.add('JoinBuilder should support complex nested and/or combinations', () => {
+  const params = new QueryBuilder()
+    .join(joinBuilder => {
+      joinBuilder.and('posts', group => {
+        group
+          .where('status', 'equals', 'published')
+          .or(inner => {
+            inner
+              .where('author', 'equals', 'Alice')
+              .where('author', 'equals', 'Bob');
+          });
+      });
+    })
+    .build();
+
+  const actual = encoder.stringify(params);
+
+  const expected = encoder.stringify({
+    joins: {
+      posts: {
+        where: {
+          and: [
+            { status: { equals: 'published' } },
+            { or: [
+              { author: { equals: 'Alice' } },
+              { author: { equals: 'Bob' } }
+            ]}
+          ]
+        }
+      }
+    }
+  });
+
+  TestHarness.assertEqual(actual, expected);
+});
+
+harness.add('JoinBuilder should combine where() with other join operations', () => {
+  const params = new QueryBuilder()
+    .join(joinBuilder => {
+      joinBuilder
+        .where('posts', 'status', 'equals', 'published')
+        .limit('posts', 5)
+        .sort('posts', 'createdAt');
+    })
+    .build();
+
+  const actual = encoder.stringify(params);
+
+  const expected = encoder.stringify({
+    joins: {
+      posts: {
+        where: {
+          status: { equals: 'published' }
+        },
+        limit: 5,
+        sort: 'createdAt'
+      }
+    }
+  });
+
+  TestHarness.assertEqual(actual, expected);
+});
+
+harness.add('JoinBuilder should accumulate where() and and() on the same join field', () => {
+  const params = new QueryBuilder()
+    .join(joinBuilder => {
+      joinBuilder
+        .where('posts', 'status', 'equals', 'published')
+        .and('posts', group => {
+          group
+            .where('rating', 'greater_than', 3)
+            .where('featured', 'equals', true);
+        });
+    })
+    .build();
+
+  const actual = encoder.stringify(params);
+
+  const expected = encoder.stringify({
+    joins: {
+      posts: {
+        where: {
+          status: { equals: 'published' },
+          and: [
+            { rating: { greater_than: 3 } },
+            { featured: { equals: true } }
+          ]
+        }
+      }
+    }
+  });
+
+  TestHarness.assertEqual(actual, expected);
+});
+
 export function testJoinBuilder() {
   console.log('Running JoinBuilder tests...\n');
   harness.run();

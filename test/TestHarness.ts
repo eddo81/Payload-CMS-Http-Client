@@ -40,7 +40,9 @@ const colours = {
 
 // Helper: normalize query string segment order
 const Normalize = (qs: string) : string => {
-   return qs.split('&').filter(Boolean).sort().join('&');
+   const withoutPrefix = qs.startsWith('?') ? qs.slice(1) : qs;
+   const sorted = withoutPrefix.split('&').filter(Boolean).sort().join('&');
+   return qs.startsWith('?') ? `?${sorted}` : sorted;
 };
 
 class TestHarness {
