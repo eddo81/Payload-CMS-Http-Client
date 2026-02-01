@@ -2,26 +2,6 @@
 
 This document outlines the prioritized tasks identified during the project audit. Items are grouped by priority and include references to specific files and line numbers.
 
-### 5. Document JoinBuilder.where() Overwrite Behavior
-
-**File:** `lib/JoinBuilder.ts:199-205`
-
-**Issue:** Multiple calls to `where()` for the same join field overwrite the previous `where` clause (last-write-wins). This may be unexpected to consumers.
-
-**Action:** Add documentation clarifying this behavior, or consider supporting multiple where clauses per join if Payload CMS supports it.
-
----
-
-### 6. Consider Deduplicating DocumentDTO.json
-
-**File:** `lib/models/DocumentDTO.ts:10`
-
-**Issue:** `DocumentDTO.json` stores the entire raw response, including `id`, `createdAt`, and `updatedAt` which are also extracted into dedicated fields. This creates redundancy.
-
-**Action:** Evaluate whether `json` should exclude the extracted fields to reduce duplication, or document the intentional design choice.
-
----
-
 ## Incomplete Features
 
 The following `HttpClient` methods are stubbed and need implementation:
@@ -51,14 +31,36 @@ Based on the component responsibilities outlined in `PROJECT_GUIDELINES.md`:
 
 ---
 
+## Authentication
+
+The `HttpClient` authentication configuration needs to be fixed and extended to support the strategies used by Payload CMS's REST API.
+
+### API Key Authentication (High Priority)
+
+The current implementation incorrectly uses `Bearer ${apiKey}` in the `Authorization` header. Payload CMS expects the format `{collection-slug} API-Key {api-key}` (e.g. `users API-Key abc123`).
+
+- **File:** `lib/HttpClient.ts:30-33`, `lib/HttpClient.ts:58-65`
+- **Issue:** Wrong header format; missing collection slug parameter
+- **Fix:** Update constructor options to accept a collection slug, correct the `Authorization` header format
+
+### JWT Authentication (Medium Priority)
+
+Payload CMS supports JWT-based authentication via login endpoints. Tokens are returned from `POST /api/{collection-slug}/login` and passed as `Bearer {token}` in the `Authorization` header.
+
+- **Scope:** To be designed and implemented after API key auth is corrected
+
+---
+
 ## Summary Checklist
 
 - [x] Fix query string `?` prefix (Critical)
 - [x] URL-encode `slug` and `id` parameters (Medium)
 - [x] Make `QueryBuilder.build()` idempotent (Medium)
 - [x] Rename `GetClauses()` to `getClauses()` (Low)
-- [ ] Document `JoinBuilder.where()` overwrite behavior (Low)
-- [ ] Evaluate `DocumentDTO.json` redundancy (Low)
+- [x] Document `JoinBuilder.where()` overwrite behavior (Low)
+- [x] Evaluate `DocumentDTO.json` redundancy (Low)
+- [ ] Fix API key authentication header format (High)
+- [ ] Implement JWT authentication support (Medium)
 - [ ] Implement `create()` method
 - [ ] Implement `delete()` method
 - [ ] Implement `deleteById()` method

@@ -5,31 +5,33 @@ import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
 import { DocumentMapper } from "./mappers/DocumentMapper.js";
 import { PaginatedDocsMapper } from "./mappers/PaginatedDocsMapper.js";
+import type { HttpClientConfig } from "./config/HttpClientConfig.js";
+import type { IAuthCredential } from "./internal/contracts/IAuthCredential.js";
 import type { Json } from "./types/Json";
 
 export class HttpClient {
   private _baseUrl: string;
   private _headers: Record<string, string>;
-  private _apiKey?: string | undefined = undefined;
+  private _auth: IAuthCredential | undefined = undefined;
   private _encoder: QueryStringEncoder = new QueryStringEncoder();
 
-  constructor(options: { baseUrl: string; headers?: Record<string, string>; apiKey?: string | undefined }) {
+  constructor(config: HttpClientConfig) {
     try {
-      this._baseUrl = new URL(options.baseUrl).toString();
-    } 
+      this._baseUrl = new URL(config.baseUrl).toString();
+    }
     catch (error) {
-      throw new Error(`[PayloadError] Invalid base URL: ${options.baseUrl}`, { cause: error });
+      throw new Error(`[PayloadError] Invalid base URL: ${config.baseUrl}`, { cause: error });
     }
 
     this._headers = {
       Accept: "application/json",
       "Content-Type": "application/json",
-      ...(options.headers ?? {}),
+      ...(config.headers ?? {}),
     };
 
-    if (options.apiKey) {
-      this._apiKey = options.apiKey;
-      this._headers["Authorization"] = `Bearer ${this._apiKey}`;
+    if (config.auth) {
+      this._auth = config.auth;
+      this._auth.applyTo(this._headers);
     }
   }
 
@@ -40,25 +42,26 @@ export class HttpClient {
       ...headers,
     };
 
-    this._syncAuthorizationHeader();
+    this._syncAuth();
   }
 
-  set apiKey(apiKey: string | undefined) {
-    this._apiKey = apiKey;
+  set auth(auth: IAuthCredential | undefined) {
+    this._auth = auth;
 
-    this._syncAuthorizationHeader();
+    this._syncAuth();
   }
 
   /**
-   * Synchronizes the Authorization header with the current API key.
+   * Synchronizes the `Authorization` header with the current
+   * authentication credential.
    *
-   * - If an API key is set, adds or updates the `Authorization` header.
-   * - If no API key is set, removes the `Authorization` header.
+   * - If a credential is set, delegates to its `applyTo` method.
+   * - If no credential is set, removes the `Authorization` header.
    */
-  private _syncAuthorizationHeader(): void {
-    if (this._apiKey) {
-      this._headers["Authorization"] = `Bearer ${this._apiKey}`;
-    } 
+  private _syncAuth(): void {
+    if (this._auth) {
+      this._auth.applyTo(this._headers);
+    }
     else {
       delete this._headers["Authorization"];
     }
@@ -112,28 +115,28 @@ export class HttpClient {
   * responsible for wrapping the returned JSON into DTOs as appropriate.
   *
   * @param {string} url - Fully resolved request URL.
-  * @param {object} options - Optional `fetch` configuration overrides.
+  * @param {object} config - Optional `fetch` configuration overrides.
   * 
   * @returns {Promise<Json | undefined>} Parsed JSON response, or `undefined` for empty responses.
   * 
   * @throws PayloadError | Error.
   */
-  private async _fetch(url: string, options: RequestInit = {}): Promise<Json | undefined> {    
+  private async _fetch(url: string, config: RequestInit = {}): Promise<Json | undefined> {    
     let response: Response;
     let text: string;
     let json: Json | undefined = undefined;
 
-    const _options: RequestInit = {
+    const _config: RequestInit = {
       method: 'GET',
-      ...options,
+      ...config,
       headers: {
         ...this._headers,
-        ...(options.headers ?? {}),
+        ...(config.headers ?? {}),
       },
     };
 
     try {
-      response = await fetch(url, _options);
+      response = await fetch(url, _config);
       text = await response.text();
 
       if(text.length > 0) {
