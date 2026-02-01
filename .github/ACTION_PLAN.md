@@ -35,19 +35,27 @@ Based on the component responsibilities outlined in `PROJECT_GUIDELINES.md`:
 
 The `HttpClient` authentication configuration needs to be fixed and extended to support the strategies used by Payload CMS's REST API.
 
-### API Key Authentication (High Priority)
+### API Key Authentication (Resolved)
 
-The current implementation incorrectly uses `Bearer ${apiKey}` in the `Authorization` header. Payload CMS expects the format `{collection-slug} API-Key {api-key}` (e.g. `users API-Key abc123`).
-
-- **File:** `lib/HttpClient.ts:30-33`, `lib/HttpClient.ts:58-65`
-- **Issue:** Wrong header format; missing collection slug parameter
-- **Fix:** Update constructor options to accept a collection slug, correct the `Authorization` header format
+Implemented via `IAuthCredential` interface (`lib/internal/contracts/IAuthCredential.ts`) and `ApiKeyAuth` class (`lib/config/ApiKeyAuth.ts`). The `HttpClient` constructor now accepts `HttpClientConfig` with an optional `auth` field. The `Authorization` header uses the correct Payload CMS format: `{collection-slug} API-Key {api-key}`.
 
 ### JWT Authentication (Medium Priority)
 
 Payload CMS supports JWT-based authentication via login endpoints. Tokens are returned from `POST /api/{collection-slug}/login` and passed as `Bearer {token}` in the `Authorization` header.
 
 - **Scope:** To be designed and implemented after API key auth is corrected
+
+---
+
+## Portability Notes
+
+### Json Type
+
+The `Json` type (`lib/types/Json.ts`) is portable by concept. The core shape `Json = { [key: string]: JsonValue }` maps directly to `Dictionary<string, object?>` in C# and `Map<String, dynamic>` in Dart. The recursive union subtypes (`JsonValue`, `JsonPrimitive`, `JsonArray`) provide compile-time safety specific to TypeScript and have no direct equivalent in C#/Dart, but are unnecessary there since those languages use `object`/`dynamic` for the same purpose.
+
+### Generic Registry Pattern
+
+The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry` and `JoinBuilder._getOrCreateClause()`. If a third consumer emerges, consider extracting a generic `Registry<T>` with a factory callback. Maps to `Registry<T>` in C# and Dart with no portability concerns.
 
 ---
 
@@ -59,8 +67,11 @@ Payload CMS supports JWT-based authentication via login endpoints. Tokens are re
 - [x] Rename `GetClauses()` to `getClauses()` (Low)
 - [x] Document `JoinBuilder.where()` overwrite behavior (Low)
 - [x] Evaluate `DocumentDTO.json` redundancy (Low)
-- [ ] Fix API key authentication header format (High)
+- [x] Fix API key authentication header format (High)
 - [ ] Implement JWT authentication support (Medium)
+- [x] Align `IClause.build()` return type to `Json` (type safety)
+- [x] Replace `JoinClause` magic strings with typed fields
+- [x] Colocate mapper logic into DTO factory methods (`fromJson`/`toJson`)
 - [ ] Implement `create()` method
 - [ ] Implement `delete()` method
 - [ ] Implement `deleteById()` method

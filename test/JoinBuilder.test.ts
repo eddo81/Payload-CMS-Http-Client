@@ -20,11 +20,11 @@ harness.add('JoinBuilder should produce correct nested object structure', () => 
   const expected = encoder.stringify({
     joins: {
       posts: {
+        limit: 1,
+        sort: '-title',
         where: {
           author: { equals: 'Alice' }
-        },
-        sort: '-title',
-        limit: 1
+        }
       },
     }
   });
@@ -91,8 +91,8 @@ harness.add('JoinBuilder should support multiple join fields', () => {
         sort: 'title',
       },
       comments: {
-        count: true,
         limit: 10,
+        count: true,
       }
     }
   });
@@ -280,11 +280,11 @@ harness.add('JoinBuilder should combine where() with other join operations', () 
   const expected = encoder.stringify({
     joins: {
       posts: {
+        limit: 5,
+        sort: 'createdAt',
         where: {
           status: { equals: 'published' }
-        },
-        limit: 5,
-        sort: 'createdAt'
+        }
       }
     }
   });

@@ -1,4 +1,5 @@
 import type { Operator } from "./types/Operator";
+import type { JsonValue } from "./types/Json.js";
 import { WhereBuilder } from "./WhereBuilder.js";
 import { JoinBuilder } from "./JoinBuilder.js";
 import type { Json } from "./types/Json.js";
@@ -220,7 +221,7 @@ export class QueryBuilder {
    * 
    * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
    */
-  where(field: string, operator: Operator, value: unknown): this {
+  where(field: string, operator: Operator, value: JsonValue): this {
     this._whereBuilder.where(field, operator, value);
 
     return this;

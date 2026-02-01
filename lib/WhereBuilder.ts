@@ -3,7 +3,7 @@ import { AndClause } from "./internal/AndClause.js";
 import { OrClause } from "./internal/OrClause.js";
 import { WhereClause } from "./internal/WhereClause.js";
 import type { Operator } from "./types/Operator.js";
-import type { Json } from "./types/Json.js";
+import type { Json, JsonValue } from "./types/Json.js";
 
 /**
  * WhereBuilder
@@ -17,7 +17,7 @@ export class WhereBuilder {
   /**
    * Adds a simple comparison clause.
    */
-  where(field: string, operator: Operator, value: unknown): this {
+  where(field: string, operator: Operator, value: JsonValue): this {
     this._clauses.push(new WhereClause(field, operator, value));
 
     return this;

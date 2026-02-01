@@ -2,7 +2,7 @@ import { JoinClause } from "./internal/JoinClause.js";
 import { WhereBuilder } from "./WhereBuilder.js";
 import { WhereBuilderRegistry } from "./internal/WhereBuilderRegistry.js";
 import type { Operator } from "./types/Operator.js";
-import type { Json } from "./types/Json.js";
+import type { Json, JsonValue } from "./types/Json.js";
 
 /**
  * JoinBuilder
@@ -27,47 +27,29 @@ export class JoinBuilder {
   private _disabled = false;
 
   /**
-   * Adds or updates a join operation for a given join field.
+   * Finds or creates a `JoinClause` for the given join field.
    *
-   * This method sets a key-value pair on the `JoinClause` for the
-   * given `on` field, creating the clause if it does not yet exist.
+   * If `on` is an empty string, returns `undefined` and the
+   * caller should skip the operation.
    *
-   * - Join operations are grouped by their `on` field
-   * - Repeated operations for the same key replace previous values
-   * - Invalid or empty inputs are ignored safely
-   *
-   * Where clause accumulation is managed externally by the
-   * `WhereBuilderRegistry`; by the time `_add` receives a where
-   * value, it is already a fully built object.
-   *
-   * Guard behavior:
-   * - If `on` is an empty string, the operation is skipped
-   * - If `value` is `undefined`, `null`, or an empty string, the operation is skipped
-   *
-   * @param {string} on - The `Join Field` name (e.g. "relatedPosts") to join on.
-   * @param key - The join operation key (e.g. "limit", "sort", "where", "count").
-   * @param value - The value for the join operation.
+   * @param {string} on - The `Join Field` name (e.g. "relatedPosts").
+   * @returns {JoinClause | undefined} The clause instance, or undefined if `on` is empty.
    */
-  private _add(on: string, key: string, value: any): void {
-    if(on === '') {
-      return;
+  private _getOrCreateClause(on: string): JoinClause | undefined {
+    if (on === '') {
+      return undefined;
     }
 
-    if(value === undefined || value === null || value === '') {
-      return;
-    }
-
-    let clause: JoinClause | undefined = this._clauses.find((clause) => {
+    let clause = this._clauses.find((clause) => { 
       return clause.on === on;
     });
 
     if (clause === undefined) {
-      this._clauses.push(new JoinClause(on, key, value));
+      clause = new JoinClause(on);
+      this._clauses.push(clause);
     }
-    else
-    {
-      clause.set(key, value);
-    }
+
+    return clause;
   }
 
  /**
@@ -86,7 +68,11 @@ export class JoinBuilder {
   * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
   */
   limit(on: string, value: number): this {
-    this._add(on, 'limit', value);
+    const clause = this._getOrCreateClause(on);
+    
+    if (clause !== undefined) {
+      clause.limit = value;
+    }
 
     return this;
   }
@@ -111,7 +97,11 @@ export class JoinBuilder {
   * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
   */
   page(on: string, page: number): this {
-    this._add(on, 'page', page);
+    const clause = this._getOrCreateClause(on);
+
+    if (clause !== undefined) {
+      clause.page = page;
+    } 
 
     return this;
   }
@@ -132,7 +122,15 @@ export class JoinBuilder {
   * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
   */
   sort(on: string, field: string): this {
-    this._add(on, 'sort', field);
+    if (field === '') {
+      return this;
+    } 
+
+    const clause = this._getOrCreateClause(on);
+    
+    if (clause !== undefined) {
+      clause.sort = field;
+    } 
 
     return this;
   }
@@ -153,9 +151,17 @@ export class JoinBuilder {
   * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
   */
   sortByDescending(on: string, field: string): this {
-    const _field = field.startsWith('-') ? field : `-${field}`;
+    if (field === '') {
+      return this;
+    } 
 
-    this._add(on, 'sort', _field);
+    const _field = field.startsWith('-') ? field : `-${field}`;
+    
+    const clause = this._getOrCreateClause(on);
+    
+    if (clause !== undefined) {
+      clause.sort = _field;
+    } 
 
     return this;
   }
@@ -176,7 +182,11 @@ export class JoinBuilder {
   * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
   */
   count(on: string, value: boolean = true): this {
-    this._add(on, 'count', value);
+    const clause = this._getOrCreateClause(on);
+    
+    if (clause !== undefined) {
+       clause.count = value;
+    }
 
     return this;
   }
@@ -191,7 +201,7 @@ export class JoinBuilder {
   * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
   * @param {string} field - The field to compare.
   * @param {Operator} operator - The comparison operator (e.g., 'equals', 'not_equals', 'in', etc.).
-  * @param {unknown} value - The value to compare the field against.
+  * @param {JsonValue} value - The value to compare the field against.
   *
   * @example
   * const query = new QueryBuilder();
@@ -204,12 +214,16 @@ export class JoinBuilder {
   *
   * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
   */
-  where(on: string, field: string, operator: Operator, value: unknown): this {
+  where(on: string, field: string, operator: Operator, value: JsonValue): this {
     const builder = this._registry.get(on);
-
+    
     builder.where(field, operator, value);
 
-    this._add(on, 'where', builder.build());
+    const clause = this._getOrCreateClause(on);
+    
+    if (clause !== undefined) {
+      clause.where = builder.build();
+    } 
 
     return this;
   }
@@ -239,8 +253,12 @@ export class JoinBuilder {
     const builder = this._registry.get(on);
 
     builder.and(callback);
+
+    const clause = this._getOrCreateClause(on);
     
-    this._add(on, 'where', builder.build());
+    if (clause !== undefined) {
+      clause.where = builder.build();
+    } 
 
     return this;
   }
@@ -268,10 +286,14 @@ export class JoinBuilder {
   */
   or(on: string, callback: (builder: WhereBuilder) => void): this {
     const builder = this._registry.get(on);
-
-    builder.or(callback);
     
-    this._add(on, 'where', builder.build());
+    builder.or(callback);
+
+    const clause = this._getOrCreateClause(on);
+
+    if (clause !== undefined) {
+      clause.where = builder.build(); 
+    } 
 
     return this;
   }

@@ -1,4 +1,5 @@
 import type { IClause } from "./contracts/IClause.js";
+import type { Json } from "../types/Json.js";
 
 /**
  * JoinClause
@@ -35,45 +36,19 @@ export class JoinClause implements IClause {
   */
   public readonly on: string;
 
-  /**
-   * Internal key-value store for join operations.
-   *
-   * Keys correspond to Payload join options such as:
-   * - `limit`
-   * - `page`
-   * - `sort`
-   * - `count`
-   * - `where`
-   *
-   * Values are overwritten when the same operation is set multiple times.
-   */
-  private readonly _kvp: Record<string, unknown> = {};
+  limit?: number;
+  page?: number;
+  sort?: string;
+  count?: boolean;
+  where?: Json;
 
  /**
   * Creates a new JoinClause for a given join field.
   *
   * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {string} field - Optional initial join operation key (e.g. "limit", "sort").
-  * @param {unknown} value - Optional value for the join operation.
   */
-  constructor(on: string, field?: string, value?: unknown) {
+  constructor(on: string) {
     this.on = on;
-    if (field !== undefined && value !== undefined) {
-      this.set(field, value);
-    }
-  }
-
- /**
-  * Sets or replaces a join operation for this clause.
-  *
-  * If the same operation key is set multiple times, the
-  * previous value is overwritten (last-write-wins).
-  *
-  * @param {string} field - The join operation key.
-  * @param {unknown} value - The operation value.
-  */
-  set(field: string, value: unknown): void {
-    this._kvp[field] = value;
   }
 
   /**
@@ -82,9 +57,17 @@ export class JoinClause implements IClause {
    * This method does not mutate internal state and may be called
    * multiple times safely.
    *
-   * @returns {Record<string, unknown>} A nested object suitable for query string encoding.
+   * @returns {Json} A nested object suitable for query string encoding.
    */
-  build(): Record<string, unknown> {
-    return { [this.on]: { ...this._kvp } };
+  build(): Json {
+    const inner: Json = {};
+
+    if (this.limit !== undefined) inner.limit = this.limit;
+    if (this.page !== undefined) inner.page = this.page;
+    if (this.sort !== undefined) inner.sort = this.sort;
+    if (this.count !== undefined) inner.count = this.count;
+    if (this.where !== undefined) inner.where = this.where;
+
+    return { [this.on]: inner };
   }
 }

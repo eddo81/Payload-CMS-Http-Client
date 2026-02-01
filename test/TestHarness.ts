@@ -1,6 +1,6 @@
 export type TestCase = {
   name: string;
-  run: () => void;
+  run: () => void | Promise<void>;
 };
 
 const colours = {
@@ -50,16 +50,16 @@ class TestHarness {
   private failed = 0;
   private tests: TestCase[] = [];
 
-  add(name: string, fn: () => void) {
+  add(name: string, fn: () => void | Promise<void>) {
     const testCount: number = this.tests.length + 1;
     this.tests.push({ name: `Test ${testCount}: ${name}`, run: fn });
   }
 
-  run() {
+  async run() {
     for (let i = 0; i < this.tests.length; i++) {
       const test = this.tests[i];
       try {
-        test.run();
+        await test.run();
         this.passed++;
         console.log(`✅ PASS - ${test.name}`);
       } catch (err) {
