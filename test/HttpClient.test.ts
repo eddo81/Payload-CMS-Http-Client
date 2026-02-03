@@ -19,6 +19,5 @@ function getPost() : Promise<void> {
 harness.add('Fetched posts:', getPost);
 
 export async function testHttpClient() {
-  console.log('Running HttpClient tests...\n');
-  await harness.run();
+  await harness.run('Running HttpClient tests...\n');
 }

@@ -2,7 +2,7 @@ import { QueryBuilder } from '../lib/QueryBuilder.ts';
 import { QueryStringEncoder } from '../lib/internal/utils/QueryStringEncoder.ts';
 import { TestHarness, Normalize } from './TestHarness.ts';
 
-const encoder = new QueryStringEncoder();
+const encoder = new QueryStringEncoder({ addQueryPrefix: false });
 const harness = new TestHarness();
 
 harness.add('select() should serialize as comma-separated list', () => {
@@ -11,7 +11,7 @@ harness.add('select() should serialize as comma-separated list', () => {
     .build();
 
   const actual = encoder.stringify(params);
-  const expected = '?select=title,author';
+  const expected = 'select=title,author';
 
   TestHarness.assertEqual(actual, expected);
 });
@@ -23,7 +23,7 @@ harness.add('sort() and sortByDescending() should serialize as comma-separated l
     .build();
 
   const actual = encoder.stringify(params);
-  const expected = '?sort=date,-title';
+  const expected = 'sort=date,-title';
 
   TestHarness.assertEqual(actual, expected);
 });
@@ -34,7 +34,7 @@ harness.add('populate() should serialize as comma-separated list', () => {
     .build();
 
   const actual = encoder.stringify(params);
-  const expected = '?populate=author,comments';
+  const expected = 'populate=author,comments';
 
   TestHarness.assertEqual(actual, expected);
 });
@@ -48,7 +48,7 @@ harness.add('where() with nested OR group should flatten correctly', () => {
     .build();
 
   const actual = encoder.stringify(params);
-  const expected = '?where[or][0][title][equals]=foo&where[or][1][title][equals]=bar';
+  const expected = 'where[or][0][title][equals]=foo&where[or][1][title][equals]=bar';
 
   TestHarness.assertEqual(actual, expected);
 });
@@ -66,7 +66,7 @@ harness.add('Mixed logical nesting (AND containing OR) should flatten correctly'
 
   const actual = encoder.stringify(params);
   const expected = [
-    '?where[and][0][status][equals]=published',
+    'where[and][0][status][equals]=published',
     'where[and][1][or][0][title][equals]=foo',
     'where[and][1][or][1][title][equals]=bar',
   ].join('&');
@@ -81,7 +81,7 @@ harness.add('Multiple where() calls should merge fields correctly', () => {
     .build();
 
   const actual = encoder.stringify(params);
-  const expected = '?where[title][equals]=foo&where[status][equals]=published';
+  const expected = 'where[title][equals]=foo&where[status][equals]=published';
 
   TestHarness.assertEqual(Normalize(actual), Normalize(expected));
 });
@@ -95,7 +95,7 @@ harness.add('Or groups should produce correct nested tree', () => {
     .build();
 
   const actual = encoder.stringify(params);
-  const expected = '?where[or][0][title][equals]=foo&where[or][1][status][equals]=published';
+  const expected = 'where[or][0][title][equals]=foo&where[or][1][status][equals]=published';
   
   TestHarness.assertEqual(actual, expected);
 });
@@ -107,12 +107,11 @@ harness.add('QueryBuilder should overwrite where result instead of merging', () 
     .build();
 
   const actual = encoder.stringify(params);
-  const expected = '?where[title][equals]=bar';
+  const expected = 'where[title][equals]=bar';
 
   TestHarness.assertEqual(actual, expected);
 });
 
-export function testQueryBuilder() {
-  console.log('Running QueryBuilder tests...\n');
-  harness.run();
+export async function testQueryBuilder() {
+  await harness.run('Running QueryBuilder tests...\n');
 }

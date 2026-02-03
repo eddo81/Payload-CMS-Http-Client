@@ -1,3 +1,5 @@
+import type { EncoderConfig } from "../../config/EncoderConfig.js";
+
 /**
  * QueryStringEncoder
  *
@@ -38,6 +40,30 @@
  * and avoids language-specific constructs to make porting straightforward.
  */
 export class QueryStringEncoder {
+  private readonly _config: EncoderConfig = {
+    addQueryPrefix: true,
+    strictEncoding: false,
+  };
+
+ /**
+  * Creates a new QueryStringEncoder.
+  *
+  * @param {EncoderConfig} config - Optional configuration object. See {@link EncoderConfig} for available options.
+  *   When omitted, defaults to `{ addQueryPrefix: true, strictEncoding: false }`.
+  */
+  public constructor(config?: EncoderConfig) {
+    if (config !== undefined) {
+      this._config = { 
+        ...this._config, 
+        ...config 
+      };
+    }
+  }
+
+  private get _prefix(): string {
+    return this._config.addQueryPrefix ? '?' : '';
+  }
+
   /**
    * Converts the provided object into a Payload-compatible query string.
    *
@@ -55,7 +81,7 @@ export class QueryStringEncoder {
       return '';
     }
 
-    return `?${result}`;
+    return `${this._prefix}${result}`;
   }
 
   /**
@@ -68,10 +94,16 @@ export class QueryStringEncoder {
    * @returns The encoded string, with `[]` and `,` left unescaped.
    */
   private _safeEncode(value: string): string {
-    return encodeURIComponent(value)
-    .replace(/%5B/g, '[')
-    .replace(/%5D/g, ']')
-    .replace(/%2C/g, ',');
+    const encoded = encodeURIComponent(value);
+
+    if (this._config.strictEncoding) {
+      return encoded;
+    }
+
+    return encoded
+      .replace(/%5B/g, '[')
+      .replace(/%5D/g, ']')
+      .replace(/%2C/g, ',');
   }
 
   /**
@@ -82,11 +114,11 @@ export class QueryStringEncoder {
    * is encoded and appended to the accumulated query string.
    *
    * @param {Record<string, unknown>} obj - The current object or value being serialized.
-   * @param {string} prefix - The key prefix representing the current path in the nested structure.
-   *                 For example, in `where[title][equals]`, `prefix` may be `where[title]`.
+   * @param {string} parentKey - The accumulated key path representing the current position in the nested structure.
+   *                 For example, in `where[title][equals]`, `parentKey` may be `where[title]`.
    * @returns A query string fragment, or `null` if the object contains no valid entries.
    */
-  private _serialize(obj: Record<string, unknown>, prefix: string): string | null {
+  private _serialize(obj: Record<string, unknown>, parentKey: string): string | null {
     const segments: string[] = [];
 
     // Return early when hitting a non-object.
@@ -101,7 +133,7 @@ export class QueryStringEncoder {
       }
 
       // Build the current key path, preserving bracket notation.
-      const _key = (prefix) ? `${prefix}[${this._safeEncode(key)}]` : this._safeEncode(key);
+      const _key = (parentKey) ? `${parentKey}[${this._safeEncode(key)}]` : this._safeEncode(key);
 
       const encoded: string | null = this._isPrimitive(value) ? this._serializePrimitive(_key, value) : null;
 
@@ -169,34 +201,34 @@ export class QueryStringEncoder {
    * bigints, or functions) are ignored.
    *
    * @param arr - The array to serialize.
-   * @param prefix - The current key path (e.g. `populate` or `where[tags]`).
+   * @param parentKey - The current key path (e.g. `populate` or `where[tags]`).
    * @param segments - The array of accumulated query segments.
    */
-  private _serializeArray(arr: unknown[], prefix: string, segments: string[]): void {
+  private _serializeArray(arr: unknown[], parentKey: string, segments: string[]): void {
     for (let i = 0; i < arr.length; i++) {
       const value = arr[i];
-      const _prefix = `${prefix}[${i}]`;
+      const elementKey = `${parentKey}[${i}]`;
 
       if (value === undefined || value === null) {
         continue;
       } 
 
-      const encoded: string | null = this._isPrimitive(value) ? this._serializePrimitive(_prefix, value) : null;
+      const encoded: string | null = this._isPrimitive(value) ? this._serializePrimitive(elementKey, value) : null;
 
       // Handle primitive values first — these are terminal nodes in the structure.
-      // Early continue ensures minimal nesting and clearer control flow.  
+      // Early continue ensures minimal nesting and clearer control flow.
       if (encoded) {
           segments.push(encoded);
-          continue;  
+          continue;
       }
 
       // Handle arrays recursively.
       if (Array.isArray(value)) {
-        this._serializeArray(value, _prefix, segments);
+        this._serializeArray(value, elementKey, segments);
         continue;
       }
 
-      const nested: string | null = this._isPlainObject(value) ? this._serialize(value, _prefix) : null;
+      const nested: string | null = this._isPlainObject(value) ? this._serialize(value, elementKey) : null;
       
       // Recursively serialize nested objects into query segments.
       if (nested) {

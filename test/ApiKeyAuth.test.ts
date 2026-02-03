@@ -46,7 +46,6 @@ harness.add('ApiKeyAuth should use collection slug and key values as provided', 
   TestHarness.assertEqual(headers['Authorization'], 'admin-users API-Key key-with-dashes-123');
 });
 
-export function testApiKeyAuth() {
-  console.log('Running ApiKeyAuth tests...\n');
-  harness.run();
+export async function testApiKeyAuth() {
+  await harness.run('Running ApiKeyAuth tests...\n');
 }

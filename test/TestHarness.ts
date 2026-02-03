@@ -55,7 +55,11 @@ class TestHarness {
     this.tests.push({ name: `Test ${testCount}: ${name}`, run: fn });
   }
 
-  async run() {
+  async run(message?: string) {
+    if (message) {
+      console.log(message);
+    }
+
     for (let i = 0; i < this.tests.length; i++) {
       const test = this.tests[i];
       try {
