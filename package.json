@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "start": "node --no-warnings --loader ts-node/esm test/run-unit-tests.ts",
-    "test:integration": "node --no-warnings --loader ts-node/esm test/run-unit-tests.ts"
+    "test:integration": "node --no-warnings --loader ts-node/esm test/run-integration-tests.ts"
   },
   "devDependencies": {
     "@types/node": "^22.5.0",

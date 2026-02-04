@@ -1,3 +1,7 @@
 import { testHttpClient } from './HttpClient.test.ts';
 
-await testHttpClient();
+async function main() {
+  await testHttpClient();
+}
+
+main();
