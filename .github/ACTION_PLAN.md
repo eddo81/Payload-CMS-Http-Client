@@ -2,18 +2,56 @@
 
 This document outlines the prioritized tasks identified during the project audit. Items are grouped by priority and include references to specific files and line numbers.
 
-## Incomplete Features
+## API Operations (from SDK analysis)
 
-The following `HttpClient` methods are stubbed and need implementation:
+### Tier 1: Core Collection Operations
 
-| Method | File Location | Purpose |
-|--------|---------------|---------|
-| `create()` | `lib/HttpClient.ts:194-197` | Create a new document |
-| `delete()` | `lib/HttpClient.ts:199-202` | Bulk delete documents |
-| `deleteById()` | `lib/HttpClient.ts:204-207` | Delete a specific document |
-| `update()` | `lib/HttpClient.ts:209-212` | Bulk update documents |
-| `updateById()` | `lib/HttpClient.ts:214-217` | Update a specific document |
-| `updateGlobal()` | `lib/HttpClient.ts:219-222` | Update a global document |
+| Method | HTTP | Path | Body | Returns |
+|--------|------|------|------|---------|
+| `find()` | GET | `/api/{slug}` | — | `PaginatedDocs` |
+| `findById()` | GET | `/api/{slug}/{id}` | — | Document |
+| `count()` | GET | `/api/{slug}` | — | `{ totalDocs }` |
+| `create()` | POST | `/api/{slug}` | JSON data | `response.doc` (unwrapped) |
+| `updateById()` | PATCH | `/api/{slug}/{id}` | JSON data | `response.doc` (unwrapped) |
+| `update()` | PATCH | `/api/{slug}` | JSON + where | Full response (bulk) |
+| `deleteById()` | DELETE | `/api/{slug}/{id}` | — | `response.doc` (unwrapped) |
+| `delete()` | DELETE | `/api/{slug}` | where query | Full response (bulk) |
+
+### Tier 2: Global Operations
+
+| Method | HTTP | Path | Body | Returns |
+|--------|------|------|------|---------|
+| `findGlobal()` | GET | `/api/globals/{slug}` | — | Document |
+| `updateGlobal()` | PATCH | `/api/globals/{slug}` | JSON data | Full response |
+
+### Tier 3: Auth Operations
+
+| Method | HTTP | Path | Body | Returns |
+|--------|------|------|------|---------|
+| `login()` | POST | `/api/{slug}/login` | `{ email, password }` | `{ token, user }` |
+| `me()` | GET | `/api/{slug}/me` | — | User document |
+| `refreshToken()` | POST | `/api/{slug}/refresh-token` | — | `{ token, user }` |
+| `forgotPassword()` | POST | `/api/{slug}/forgot-password` | `{ email }` | `{ message }` |
+| `resetPassword()` | POST | `/api/{slug}/reset-password` | `{ token, password }` | `{ token, user }` |
+
+### Tier 4: Version Operations
+
+| Method | HTTP | Path | Body | Returns |
+|--------|------|------|------|---------|
+| `findVersions()` | GET | `/api/{slug}/versions` | — | `PaginatedDocs` |
+| `findVersionById()` | GET | `/api/{slug}/versions/{id}` | — | Version document |
+| `restoreVersion()` | POST | `/api/{slug}/versions/{id}` | — | Restored document |
+| `findGlobalVersions()` | GET | `/api/globals/{slug}/versions` | — | `PaginatedDocs` |
+| `findGlobalVersionById()` | GET | `/api/globals/{slug}/versions/{id}` | — | Version document |
+| `restoreGlobalVersion()` | POST | `/api/globals/{slug}/versions/{id}` | — | Restored document |
+
+### Implementation Notes
+
+- **Single-doc operations** (`create`, `updateById`, `deleteById`): Return `json.doc`, not the wrapper
+- **Bulk operations** (`update`, `delete`): Return full response with `docs[]` and `errors[]`
+- **Request body**: Use `_fetch()` with `method` and `body: JSON.stringify(data)`
+- **Where clause for bulk ops**: Pass through QueryBuilder, encode in query string
+- **Count**: Uses same path as `find()` but with different query params
 
 ---
 
@@ -43,7 +81,15 @@ Implemented via `IAuthCredential` interface (`lib/internal/contracts/IAuthCreden
 
 Payload CMS supports JWT-based authentication via login endpoints. Tokens are returned from `POST /api/{collection-slug}/login` and passed as `Bearer {token}` in the `Authorization` header.
 
-- **Scope:** To be designed and implemented after API key auth is corrected
+**From SDK analysis:**
+- `login()`: POST to `/{collection}/login` with `{ email, password }` → returns `{ token, user, ... }`
+- `me()`: GET to `/{collection}/me` → returns current user
+- `refreshToken()`: POST to `/{collection}/refresh-token`
+
+**Implementation approach:**
+- Create `JwtAuth` class implementing `IAuthCredential`
+- `applyTo(headers)` sets `Authorization: Bearer {token}`
+- Consider adding `login()`, `me()`, `logout()` methods to HttpClient
 
 ---
 
@@ -72,9 +118,31 @@ The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry`
 - [x] Align `IClause.build()` return type to `Json` (type safety)
 - [x] Replace `JoinClause` magic strings with typed fields
 - [x] Colocate mapper logic into DTO factory methods (`fromJson`/`toJson`)
+**Tier 1 - Core (Priority)**
+- [ ] Implement `count()` method
 - [ ] Implement `create()` method
-- [ ] Implement `delete()` method
-- [ ] Implement `deleteById()` method
-- [ ] Implement `update()` method
 - [ ] Implement `updateById()` method
+- [ ] Implement `update()` method (bulk)
+- [ ] Implement `deleteById()` method
+- [ ] Implement `delete()` method (bulk)
+- [ ] Consider `disableErrors` option for `findById()`
+
+**Tier 2 - Globals**
+- [ ] Implement `findGlobal()` method
 - [ ] Implement `updateGlobal()` method
+
+**Tier 3 - Auth**
+- [ ] Implement JWT authentication support (`JwtAuth` class)
+- [ ] Implement `login()` method
+- [ ] Implement `me()` method
+- [ ] Implement `refreshToken()` method
+- [ ] Implement `forgotPassword()` method
+- [ ] Implement `resetPassword()` method
+
+**Tier 4 - Versions (Future)**
+- [ ] Implement `findVersions()` method
+- [ ] Implement `findVersionById()` method
+- [ ] Implement `restoreVersion()` method
+- [ ] Implement `findGlobalVersions()` method
+- [ ] Implement `findGlobalVersionById()` method
+- [ ] Implement `restoreGlobalVersion()` method

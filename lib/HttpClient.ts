@@ -1,5 +1,6 @@
 import { PaginatedDocsDTO } from "./models/PaginatedDocsDTO.js";
 import { DocumentDTO } from "./models/DocumentDTO.js";
+import { TotalDocsDTO } from "./models/TotalDocsDTO.js";
 import { PayloadError } from "./PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
@@ -174,19 +175,38 @@ export class HttpClient {
     }
   }
 
-  async find(slug: string, queryBuilder?: QueryBuilder): Promise<PaginatedDocsDTO> {
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, queryBuilder);
+  /**
+   * Retrieves a paginated list of documents from a collection.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.query - Optional QueryBuilder for filtering, sorting, pagination, etc.
+   *
+   * @returns A paginated response containing matching documents.
+   */
+  async find(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
+    const { slug, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
     const json = await this._fetch(url) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
-    
+
     return dto;
   }
 
-  async findById(slug: string, id: string, queryBuilder?: QueryBuilder): Promise<DocumentDTO> {
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`, queryBuilder);
+  /**
+   * Retrieves a single document by its ID.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.id - The document ID.
+   * @param options.query - Optional QueryBuilder for depth, locale, etc.
+   *
+   * @returns The requested document.
+   */
+  async findById(options: { slug: string; id: string; query?: QueryBuilder }): Promise<DocumentDTO> {
+    const { slug, id, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`, query);
     const json = await this._fetch(url) ?? {};
     const dto = DocumentDTO.fromJson(json);
-    
+
     return dto;
   }
 
@@ -215,8 +235,30 @@ export class HttpClient {
     throw new Error('not implemented');
   }
 
-  async updateGlobal(slug: string): Promise<DocumentDTO> {
+  /**
+   * Retrieves the total count of documents in a collection.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.query - Optional QueryBuilder for filtering (where clause).
+   *
+   * @returns The total document count.
+   */
+  async count(options: { slug: string; query?: QueryBuilder }): Promise<TotalDocsDTO> {
+    const { slug, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/count`, query);
+    const json = await this._fetch(url) ?? {};
+    const dto = TotalDocsDTO.fromJson(json);
+
+    return dto;
+  }
+
+  async findGlobal(options: { slug: string }): Promise<DocumentDTO> {
     // TODO
-    throw new Error('not implemented');
+    throw new Error('not implemented'); 
+  }
+
+  async updateGlobal(options: { slug: string, data: Json }): Promise<DocumentDTO> {
+    // TODO
+    throw new Error('not implemented'); 
   }
 }

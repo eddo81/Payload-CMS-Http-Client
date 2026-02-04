@@ -7,20 +7,14 @@ function getPost() : Promise<void> {
   const baseUrl = 'http://localhost:3000/';
   const httpClient = new lib.HttpClient({ baseUrl: baseUrl });
   const queryBuilder = new lib.QueryBuilder()
-    .where('author', 'equals', 'Alice')
-    .or(group => {
-      group
-        .where('title', 'contains', 'Deckbuilding')
-        .where('title', 'contains', 'Gloomhaven');
-    });
+    .where('id', 'equals', '6935c48f5fb696db32095b0dz');
+
+    //'6935c48f5fb696db32095b0d'
 
   return new Promise<void>(async (resolve) => {
-      const docs: lib.PaginatedDocsDTO = await httpClient.find('posts', queryBuilder);
-      console.dir(docs);
+      const docs: lib.TotalDocsDTO = await httpClient.count({ slug: 'postz', query: queryBuilder });
 
-      for (const doc of docs.docs) {
-        console.log(`Post id: ${doc.id}}`);
-      }
+      console.dir(docs);
 
     resolve();
   });

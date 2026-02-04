@@ -5,5 +5,6 @@ export * from './QueryBuilder.js';
 export * from './PayloadError.js';
 export * from './models/DocumentDTO.js';
 export * from './models/PaginatedDocsDTO.js';
+export * from './models/TotalDocsDTO.js';
 export * from './types/Json.js';
 export * from './types/Operator.js';
