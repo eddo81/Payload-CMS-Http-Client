@@ -13,10 +13,7 @@ export class TotalDocsDTO {
  /**
   * Maps a plain JSON object into a {@link TotalDocsDTO}.
   *
-  * Non-JSON primitives (such as {@link Date}) are normalized
-  * into transport-safe representations.
-  * 
-  * @param {Json} json - The raw JSON object received from a Payload CMS endpoint.
+  * @param {Json} json - The raw JSON object from a Payload CMS count endpoint.
   * @returns {TotalDocsDTO} A populated TotalDocsDTO instance.
   */
   static fromJson(json: Json): TotalDocsDTO {
@@ -33,11 +30,8 @@ export class TotalDocsDTO {
  /**
   * Maps a {@link TotalDocsDTO} into a plain JSON object.
   *
-  * Non-JSON primitives (such as {@link Date}) are normalized
-  * into transport-safe representations.
-  *
   * @param {TotalDocsDTO} dto - The TotalDocsDTO to map.
-  * @returns {Json} A plain JSON object suitable for Payload CMS transport.
+  * @returns {Json} A plain JSON object.
   */
   static toJson(dto: TotalDocsDTO): Json {
     const result: Json = {
