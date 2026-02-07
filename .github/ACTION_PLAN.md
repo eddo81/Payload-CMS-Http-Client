@@ -123,7 +123,7 @@ The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry`
 - [x] Document `JoinBuilder.where()` overwrite behavior (Low)
 - [x] Evaluate `DocumentDTO.json` redundancy (Low)
 - [x] Fix API key authentication header format (High)
-- [ ] Implement JWT authentication support (Medium)
+- [x] Implement JWT authentication support (Medium)
 - [x] Align `IClause.build()` return type to `Json` (type safety)
 - [x] Replace `JoinClause` magic strings with typed fields
 - [x] Colocate mapper logic into DTO factory methods (`fromJson`/`toJson`)
@@ -143,12 +143,13 @@ The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry`
 - [x] Implement `updateGlobal()` method
 
 **Tier 3 - Auth**
-- [ ] Implement JWT authentication support (`JwtAuth` class)
-- [ ] Implement `login()` method
-- [ ] Implement `me()` method
-- [ ] Implement `refreshToken()` method
-- [ ] Implement `forgotPassword()` method
-- [ ] Implement `resetPassword()` method
+- [x] Implement JWT authentication support (`JwtAuth` class)
+- [x] Implement `login()` method
+- [x] Implement `me()` method
+- [x] Implement `refreshToken()` method
+- [x] Implement `forgotPassword()` method
+- [x] Implement `resetPassword()` method
+- [x] Implement `verifyEmail()` method
 
 **Tier 5 - Extensibility**
 - [ ] Expose public `request()` method for custom endpoints (mirrors SDK's escape hatch for non-standard routes)
@@ -160,3 +161,28 @@ The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry`
 - [x] Implement `findGlobalVersions()` method
 - [x] Implement `findGlobalVersionById()` method
 - [x] Implement `restoreGlobalVersion()` method
+
+---
+
+## Post-Implementation Phase
+
+Now that Tiers 1–4 are implemented, the following should be tackled in order:
+
+### 1. Integration Testing
+- [ ] Formalize integration tests covering all HttpClient methods against a running Payload instance
+- [ ] Test auth flow end-to-end: login → use token → me → refreshToken
+- [ ] Test write operations with `ApiKeyAuth` and `JwtAuth`
+- [ ] Test error paths (invalid credentials, expired tokens, 403/404 responses)
+
+### 2. Refinement & Simplification
+- [ ] Review all methods for opportunities to reduce duplication or simplify
+- [ ] Evaluate whether any DTOs can be consolidated without losing clarity
+- [ ] Audit portability: ensure no TypeScript-specific idioms that block C#/Dart porting
+
+### 3. Documentation & Cleanup
+- [ ] Ensure all public methods and classes have terse, accurate JSDoc (move detailed descriptions to README)
+- [ ] Create `README.md` with:
+  - Library overview and installation
+  - Detailed descriptions of each public class and method
+  - Code examples for common use cases (CRUD, auth, queries, joins, globals, versions)
+  - Portability notes for C#/Dart consumers

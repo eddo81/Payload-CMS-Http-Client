@@ -1,6 +1,11 @@
 import { PaginatedDocsDTO } from "./models/PaginatedDocsDTO.js";
 import { DocumentDTO } from "./models/DocumentDTO.js";
 import { TotalDocsDTO } from "./models/TotalDocsDTO.js";
+import { LoginResultDTO } from "./models/LoginResultDTO.js";
+import { MeResultDTO } from "./models/MeResultDTO.js";
+import { RefreshResultDTO } from "./models/RefreshResultDTO.js";
+import { ResetPasswordResultDTO } from "./models/ResetPasswordResultDTO.js";
+import { MessageDTO } from "./models/MessageDTO.js";
 import { PayloadError } from "./PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
@@ -333,7 +338,7 @@ export class HttpClient {
    *
    * @returns The total document count.
    */
-  async count(options: { slug: string; query?: QueryBuilder }): Promise<Number> {
+  async count(options: { slug: string; query?: QueryBuilder }): Promise<number> {
     const { slug, query } = options;
     const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/count`, query);
     const json = await this._fetch(url) ?? {};
@@ -489,6 +494,136 @@ export class HttpClient {
 
     const json = await this._fetch(url, config) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
+
+    return dto;
+  }
+
+  // ── Auth Operations ──────────────────────────────────────────────
+
+  /**
+   * Authenticates a user and returns a JWT token.
+   *
+   * @param options.slug - The auth-enabled collection slug.
+   * @param options.data - The login credentials (e.g. `{ email, password }`).
+   *
+   * @returns The login result containing token, expiration, and user document.
+   */
+  async login(options: { slug: string; data: Json }): Promise<LoginResultDTO> {
+    const { slug, data } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/login`;
+
+    const config: RequestInit = {
+      method: 'POST',
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = LoginResultDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Retrieves the currently authenticated user.
+   *
+   * @param options.slug - The auth-enabled collection slug.
+   *
+   * @returns The current user with optional token and session metadata.
+   */
+  async me(options: { slug: string }): Promise<MeResultDTO> {
+    const { slug } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/me`;
+    const json = await this._fetch(url) ?? {};
+    const dto = MeResultDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Refreshes the current JWT token.
+   *
+   * @param options.slug - The auth-enabled collection slug.
+   *
+   * @returns The refresh result containing the new token, expiration, and user document.
+   */
+  async refreshToken(options: { slug: string }): Promise<RefreshResultDTO> {
+    const { slug } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/refresh-token`;
+
+    const config: RequestInit = {
+      method: 'POST',
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = RefreshResultDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Initiates the forgot-password flow.
+   *
+   * @param options.slug - The auth-enabled collection slug.
+   * @param options.data - The request data (e.g. `{ email }`).
+   *
+   * @returns A message confirming the request was processed.
+   */
+  async forgotPassword(options: { slug: string; data: Json }): Promise<MessageDTO> {
+    const { slug, data } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/forgot-password`;
+
+    const config: RequestInit = {
+      method: 'POST',
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = MessageDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Completes a password reset using a reset token.
+   *
+   * @param options.slug - The auth-enabled collection slug.
+   * @param options.data - The reset data (e.g. `{ token, password }`).
+   *
+   * @returns The result containing the user document and optional new token.
+   */
+  async resetPassword(options: { slug: string; data: Json }): Promise<ResetPasswordResultDTO> {
+    const { slug, data } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/reset-password`;
+
+    const config: RequestInit = {
+      method: 'POST',
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = ResetPasswordResultDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Verifies a user's email address using a verification token.
+   *
+   * @param options.slug - The auth-enabled collection slug.
+   * @param options.token - The email verification token.
+   *
+   * @returns A message confirming the verification result.
+   */
+  async verifyEmail(options: { slug: string; token: string }): Promise<MessageDTO> {
+    const { slug, token } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/verify/${encodeURIComponent(token)}`;
+
+    const config: RequestInit = {
+      method: 'POST',
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = MessageDTO.fromJson(json);
 
     return dto;
   }
