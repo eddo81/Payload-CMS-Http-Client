@@ -1,5 +1,5 @@
 import { DocumentDTO } from "./DocumentDTO.js";
-import type { Json, JsonValue } from "../types/Json.js";
+import type { Json, JsonValue } from "../../types/Json.js";
 
 function isJsonObject(value: JsonValue): value is Json {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

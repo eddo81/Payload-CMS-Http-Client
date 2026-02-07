@@ -1,5 +1,5 @@
-import { DocumentDTO } from "./DocumentDTO.js";
-import type { Json } from "../types/Json.js";
+import { DocumentDTO } from "../collection/DocumentDTO.js";
+import type { Json } from "../../types/Json.js";
 
 /**
  * RefreshResultDTO

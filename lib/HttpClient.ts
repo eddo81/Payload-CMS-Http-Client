@@ -1,15 +1,14 @@
-import { PaginatedDocsDTO } from "./models/PaginatedDocsDTO.js";
-import { DocumentDTO } from "./models/DocumentDTO.js";
-import { TotalDocsDTO } from "./models/TotalDocsDTO.js";
-import { LoginResultDTO } from "./models/LoginResultDTO.js";
-import { MeResultDTO } from "./models/MeResultDTO.js";
-import { RefreshResultDTO } from "./models/RefreshResultDTO.js";
-import { ResetPasswordResultDTO } from "./models/ResetPasswordResultDTO.js";
-import { MessageDTO } from "./models/MessageDTO.js";
+import { PaginatedDocsDTO } from "./models/collection/PaginatedDocsDTO.js";
+import { DocumentDTO } from "./models/collection/DocumentDTO.js";
+import { TotalDocsDTO } from "./models/collection/TotalDocsDTO.js";
+import { LoginResultDTO } from "./models/auth/LoginResultDTO.js";
+import { MeResultDTO } from "./models/auth/MeResultDTO.js";
+import { RefreshResultDTO } from "./models/auth/RefreshResultDTO.js";
+import { ResetPasswordResultDTO } from "./models/auth/ResetPasswordResultDTO.js";
+import { MessageDTO } from "./models/auth/MessageDTO.js";
 import { PayloadError } from "./PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
-import type { HttpClientConfig } from "./config/HttpClientConfig.js";
 import type { IAuthCredential } from "./internal/contracts/IAuthCredential.js";
 import type { Json } from "./types/Json";
 
@@ -19,22 +18,22 @@ export class HttpClient {
   private _auth: IAuthCredential | undefined = undefined;
   private _encoder: QueryStringEncoder = new QueryStringEncoder();
 
-  constructor(config: HttpClientConfig) {
+  constructor(options: { baseUrl: string; headers?: Record<string, string>; auth?: IAuthCredential }) {
     try {
-      this._baseUrl = new URL(config.baseUrl).toString();
+      this._baseUrl = new URL(options.baseUrl).toString();
     }
     catch (error) {
-      throw new Error(`[PayloadError] Invalid base URL: ${config.baseUrl}`, { cause: error });
+      throw new Error(`[PayloadError] Invalid base URL: ${options.baseUrl}`, { cause: error });
     }
 
     this._headers = {
       Accept: "application/json",
       "Content-Type": "application/json",
-      ...(config.headers ?? {}),
+      ...(options.headers ?? {}),
     };
 
-    if (config.auth) {
-      this._auth = config.auth;
+    if (options.auth) {
+      this._auth = options.auth;
       this._auth.applyTo(this._headers);
     }
   }

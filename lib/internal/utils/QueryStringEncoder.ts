@@ -1,5 +1,3 @@
-import type { EncoderConfig } from "../../config/EncoderConfig.js";
-
 /**
  * QueryStringEncoder
  *
@@ -8,7 +6,7 @@ import type { EncoderConfig } from "../../config/EncoderConfig.js";
  * This encoder is designed to preserve Payload's nested query structure
  * (e.g. `where[title][equals]=foo`) while ensuring URL-safe encoding. It uses
  * `encodeURIComponent()` internally but selectively preserves certain
- * characters that are meaningful to Payload’s syntax:
+ * characters that are meaningful to Payload's syntax:
  *
  * - Square brackets `[]` — used for representing nested properties
  * - Commas `,` — used for comma-separated lists (e.g. `select=title,author`)
@@ -40,28 +38,22 @@ import type { EncoderConfig } from "../../config/EncoderConfig.js";
  * and avoids language-specific constructs to make porting straightforward.
  */
 export class QueryStringEncoder {
-  private readonly _config: EncoderConfig = {
-    addQueryPrefix: true,
-    strictEncoding: false,
-  };
+  private readonly _addQueryPrefix: boolean;
+  private readonly _strictEncoding: boolean;
 
  /**
   * Creates a new QueryStringEncoder.
   *
-  * @param {EncoderConfig} config - Optional configuration object. See {@link EncoderConfig} for available options.
-  *   When omitted, defaults to `{ addQueryPrefix: true, strictEncoding: false }`.
+  * @param options.addQueryPrefix - When `true`, output is prefixed with `?`. Defaults to `true`.
+  * @param options.strictEncoding - When `true`, brackets and commas remain percent-encoded. Defaults to `false`.
   */
-  public constructor(config?: EncoderConfig) {
-    if (config !== undefined) {
-      this._config = { 
-        ...this._config, 
-        ...config 
-      };
-    }
+  public constructor(options?: { addQueryPrefix?: boolean; strictEncoding?: boolean }) {
+    this._addQueryPrefix = options?.addQueryPrefix ?? true;
+    this._strictEncoding = options?.strictEncoding ?? false;
   }
 
   private get _prefix(): string {
-    return this._config.addQueryPrefix ? '?' : '';
+    return this._addQueryPrefix ? '?' : '';
   }
 
   /**
@@ -96,7 +88,7 @@ export class QueryStringEncoder {
   private _safeEncode(value: string): string {
     const encoded = encodeURIComponent(value);
 
-    if (this._config.strictEncoding) {
+    if (this._strictEncoding) {
       return encoded;
     }
 
