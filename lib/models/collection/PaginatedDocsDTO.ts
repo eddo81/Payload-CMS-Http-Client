@@ -1,9 +1,6 @@
 import { DocumentDTO } from "./DocumentDTO.js";
-import type { Json, JsonValue } from "../../types/Json.js";
-
-function isJsonObject(value: JsonValue): value is Json {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import { isJsonObject } from "../../internal/utils/isJsonObject.js";
+import type { Json } from "../../types/Json.js";
 
 /**
  * PaginatedDocsDTO

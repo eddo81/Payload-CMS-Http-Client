@@ -1,5 +1,3 @@
-import { HttpClient } from "./HttpClient.js";
-
 /**
  * PayloadError
  *
@@ -14,7 +12,7 @@ import { HttpClient } from "./HttpClient.js";
  * - Provide a meaningful default error message
  * - Safely attach an underlying cause (e.g. parsed JSON error payload)
  *
- * This type is thrown by the {@link HttpClient} when a Payload API request fails
+ * This type is thrown by the HttpClient when a Payload API request fails
  * with a non-2xx response or encounters a fatal transport / parsing error.
  */
 export class PayloadError extends Error {

@@ -16,7 +16,8 @@ import type { Json, JsonValue } from "./types/Json.js";
  * - Collects join operations internally without mutating **QueryParametersDTO**
  * - Supports idempotent updates per join target (last write wins)
  * - Final query shape is produced only in `build()`
- * - May return `undefined` (no joins), `false` (joins disabled), or an object
+ * - May return `undefined` (no joins) or a joins object
+ * - Exposes `isDisabled` for callers to check the disabled state separately
  *
  * The internal representation is intentionally decoupled from the final
  * Payload query shape. Mapping to `{ joins: ... }` occurs at build time.
@@ -299,10 +300,21 @@ export class JoinBuilder {
   }
 
  /**
+  * Whether all joins have been explicitly disabled.
+  *
+  * When `true`, the caller should set `joins=false` in the
+  * query parameters instead of calling `build()`.
+  */
+  get isDisabled(): boolean {
+    return this._disabled;
+  }
+
+ /**
   * Disables all `Join Fields` from returning for the query.
   *
-  * When disabled, `build()` will return `false`, which maps directly to
-  * `joins=false` in Payload's REST API. Any previously collected join clauses are discarded.
+  * When disabled, callers should check `isDisabled` and set
+  * `joins=false` in the query string. Any previously collected
+  * join clauses are discarded by the caller.
   *
   * @example
   * const query = new QueryBuilder();
@@ -322,16 +334,11 @@ export class JoinBuilder {
  /**
   * Builds the joins object for the query.
   *
-  * @returns {Json | false | undefined}
+  * @returns {Json | undefined}
   * - `undefined` if no join operations were added
-  * - `false` if joins were explicitly disabled
   * - A joins object compatible with Payload's REST API otherwise
   */
-  build(): Json | false | undefined {
-    if(this._disabled) {
-      return false;
-    }
-
+  build(): Json | undefined {
     if (this._clauses.length === 0) {
       return undefined;
     }

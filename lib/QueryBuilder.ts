@@ -317,7 +317,6 @@ export class QueryBuilder {
    */
   build(): Json {
     const where: Json | undefined = this._whereBuilder.build();
-    const joins: Json | false | undefined = this._joinBuilder.build();
     const result: Json = {};
 
     if (this._limit !== undefined) {
@@ -356,8 +355,14 @@ export class QueryBuilder {
       result.where = where;
     }
 
-    if (joins !== undefined) {
-      result.joins = joins;
+    if (this._joinBuilder.isDisabled) {
+      result.joins = false;
+    } else {
+      const joins = this._joinBuilder.build();
+
+      if (joins !== undefined) {
+        result.joins = joins;
+      }
     }
 
     return result;
