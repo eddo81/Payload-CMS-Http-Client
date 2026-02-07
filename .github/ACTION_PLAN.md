@@ -51,7 +51,16 @@ This document outlines the prioritized tasks identified during the project audit
 - **Bulk operations** (`update`, `delete`): Return full response with `docs[]` and `errors[]`
 - **Request body**: Use `_fetch()` with `method` and `body: JSON.stringify(data)`
 - **Where clause for bulk ops**: Pass through QueryBuilder, encode in query string
-- **Count**: Uses same path as `find()` but with different query params
+- **Count**: Uses same path as `find()` but with `/count` suffix
+- **File uploads**: Extend `create()` with optional `file` parameter using a portable `FilePayload` interface:
+  ```typescript
+  // TypeScript
+  interface FilePayload { content: Blob; filename: string; mimeType?: string }
+  // C#:  byte[] content  → same structure
+  // Dart: Uint8List content → same structure
+  ```
+  Uses `FormData` with `file` + `_payload` fields (matching Payload SDK behavior).
+  Only the binary type changes per language; the interface shape is portable.
 
 ---
 
@@ -119,17 +128,19 @@ The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry`
 - [x] Replace `JoinClause` magic strings with typed fields
 - [x] Colocate mapper logic into DTO factory methods (`fromJson`/`toJson`)
 **Tier 1 - Core (Priority)**
-- [ ] Implement `count()` method
-- [ ] Implement `create()` method
-- [ ] Implement `updateById()` method
-- [ ] Implement `update()` method (bulk)
-- [ ] Implement `deleteById()` method
-- [ ] Implement `delete()` method (bulk)
+- [x] Implement `count()` method
+- [x] Implement `create()` method
+- [x] Implement `updateById()` method
+- [x] Implement `update()` method (bulk)
+- [x] Implement `deleteById()` method
+- [x] Implement `delete()` method (bulk)
+- [ ] Add file upload support to `create()` (see notes below)
 - [ ] Consider `disableErrors` option for `findById()`
+- [ ] Integration test write operations with `ApiKeyAuth`
 
 **Tier 2 - Globals**
-- [ ] Implement `findGlobal()` method
-- [ ] Implement `updateGlobal()` method
+- [x] Implement `findGlobal()` method
+- [x] Implement `updateGlobal()` method
 
 **Tier 3 - Auth**
 - [ ] Implement JWT authentication support (`JwtAuth` class)
@@ -139,10 +150,13 @@ The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry`
 - [ ] Implement `forgotPassword()` method
 - [ ] Implement `resetPassword()` method
 
-**Tier 4 - Versions (Future)**
-- [ ] Implement `findVersions()` method
-- [ ] Implement `findVersionById()` method
-- [ ] Implement `restoreVersion()` method
-- [ ] Implement `findGlobalVersions()` method
-- [ ] Implement `findGlobalVersionById()` method
-- [ ] Implement `restoreGlobalVersion()` method
+**Tier 5 - Extensibility**
+- [ ] Expose public `request()` method for custom endpoints (mirrors SDK's escape hatch for non-standard routes)
+
+**Tier 4 - Versions**
+- [x] Implement `findVersions()` method
+- [x] Implement `findVersionById()` method
+- [x] Implement `restoreVersion()` method
+- [x] Implement `findGlobalVersions()` method
+- [x] Implement `findGlobalVersionById()` method
+- [x] Implement `restoreGlobalVersion()` method

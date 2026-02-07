@@ -3,24 +3,37 @@ import { TestHarness } from './TestHarness.ts';
 
 const harness = new TestHarness();
 
-function getPost() : Promise<void> {
+function createPost(): Promise<void> {
   const baseUrl = 'http://localhost:3000/';
   const httpClient = new lib.HttpClient({ baseUrl: baseUrl });
-  const queryBuilder = new lib.QueryBuilder()
-    .where('id', 'equals', '6935c48f5fb696db32095b0dz');
 
-    //'6935c48f5fb696db32095b0d'
+  const postData = {
+    title: 'Foobar',
+    published: true,
+    tags: [
+      { tag: 'Hacked' }
+    ],
+    // category: ['category-id-here'], // relationship field - uncomment if you have categories
+  };
 
   return new Promise<void>(async (resolve) => {
-      const docs: lib.TotalDocsDTO = await httpClient.count({ slug: 'postz', query: queryBuilder });
+    const docs: lib.PaginatedDocsDTO = await httpClient.delete({
+      slug: 'posts',
+      query: new lib.QueryBuilder().or(builder => 
+        builder
+        .where('author', 'equals', 'Bob')
+        .where('author', 'equals', 'Me')
+      )
+    });
 
-      console.dir(docs);
+    console.log('Delete post:');
+    console.dir(docs, { depth: null });
 
     resolve();
   });
 }
  
-harness.add('Fetched posts:', getPost);
+harness.add('Create post:', createPost);
 
 export async function testHttpClient() {
   await harness.run('Running HttpClient tests...\n');

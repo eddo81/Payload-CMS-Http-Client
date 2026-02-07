@@ -210,29 +210,119 @@ export class HttpClient {
     return dto;
   }
 
-  async create(slug: string): Promise<DocumentDTO> {
-    // TODO
-    throw new Error('not implemented');
+  /**
+   * Creates a new document in a collection.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.data - The document data to create.
+   *
+   * @returns The created document.
+   */
+  async create(options: { slug: string; data: Json }): Promise<DocumentDTO> {
+    const { slug, data } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}`;
+
+    const config: RequestInit = {
+      method: 'POST',
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
+
+    return dto;
   }
 
-  async delete(slug: string): Promise<PaginatedDocsDTO> {
-    // TODO
-    throw new Error('not implemented');
+  /**
+   * Deletes multiple documents matching a query.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.query - QueryBuilder with where clause to select documents.
+   *
+   * @returns The bulk operation result containing deleted documents.
+   */
+  async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
+    const { slug, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
+
+    const config: RequestInit = {
+      method: 'DELETE',
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = PaginatedDocsDTO.fromJson(json);
+
+    return dto;
   }
 
-  async deleteById(slug: string): Promise<PaginatedDocsDTO> {
-    // TODO
-    throw new Error('not implemented');
+  /**
+   * Deletes a single document by its ID.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.id - The document ID.
+   *
+   * @returns The deleted document.
+   */
+  async deleteById(options: { slug: string; id: string }): Promise<DocumentDTO> {
+    const { slug, id } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
+
+    const config: RequestInit = {
+      method: 'DELETE',
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
+
+    return dto;
   }
 
-  async update(slug: string): Promise<DocumentDTO> {
-    // TODO
-    throw new Error('not implemented');
+  /**
+   * Updates multiple documents matching a query.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.data - The fields to update on all matching documents.
+   * @param options.query - QueryBuilder with where clause to select documents.
+   *
+   * @returns The bulk operation result containing updated documents.
+   */
+  async update(options: { slug: string; data: Json; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
+    const { slug, data, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
+
+    const config: RequestInit = {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = PaginatedDocsDTO.fromJson(json);
+
+    return dto;
   }
 
-  async updateById(slug: string): Promise<DocumentDTO> {
-    // TODO
-    throw new Error('not implemented');
+  /**
+   * Updates a single document by its ID.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.id - The document ID.
+   * @param options.data - The fields to update.
+   *
+   * @returns The updated document.
+   */
+  async updateById(options: { slug: string; id: string; data: Json }): Promise<DocumentDTO> {
+    const { slug, id, data } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
+
+    const config: RequestInit = {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
+
+    return dto;
   }
 
   /**
@@ -243,22 +333,163 @@ export class HttpClient {
    *
    * @returns The total document count.
    */
-  async count(options: { slug: string; query?: QueryBuilder }): Promise<TotalDocsDTO> {
+  async count(options: { slug: string; query?: QueryBuilder }): Promise<Number> {
     const { slug, query } = options;
     const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/count`, query);
     const json = await this._fetch(url) ?? {};
     const dto = TotalDocsDTO.fromJson(json);
 
+    return dto.totalDocs;
+  }
+
+  /**
+   * Retrieves a global document.
+   *
+   * @param options.slug - The global slug.
+   *
+   * @returns The global document.
+   */
+  async findGlobal(options: { slug: string }): Promise<DocumentDTO> {
+    const { slug } = options;
+    const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
+    const json = await this._fetch(url) ?? {};
+    const dto = DocumentDTO.fromJson(json);
+
     return dto;
   }
 
-  async findGlobal(options: { slug: string }): Promise<DocumentDTO> {
-    // TODO
-    throw new Error('not implemented'); 
+  /**
+   * Updates a global document.
+   *
+   * @param options.slug - The global slug.
+   * @param options.data - The fields to update.
+   *
+   * @returns The updated global document.
+   */
+  async updateGlobal(options: { slug: string; data: Json }): Promise<DocumentDTO> {
+    const { slug, data } = options;
+    const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
+
+    const config: RequestInit = {
+      method: 'POST',
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = DocumentDTO.fromJson(json['result'] as Json ?? {});
+
+    return dto;
   }
 
-  async updateGlobal(options: { slug: string, data: Json }): Promise<DocumentDTO> {
-    // TODO
-    throw new Error('not implemented'); 
+  /**
+   * Retrieves a paginated list of versions for a collection document.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.query - Optional QueryBuilder for filtering, sorting, pagination.
+   *
+   * @returns A paginated response containing version documents.
+   */
+  async findVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
+    const { slug, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/versions`, query);
+    const json = await this._fetch(url) ?? {};
+    const dto = PaginatedDocsDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Retrieves a single version document by its ID.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.id - The version ID.
+   *
+   * @returns The version document.
+   */
+  async findVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
+    const { slug, id } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
+    const json = await this._fetch(url) ?? {};
+    const dto = DocumentDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Restores a collection document to a specific version.
+   *
+   * @param options.slug - The collection slug.
+   * @param options.id - The version ID to restore.
+   *
+   * @returns The restored document.
+   */
+  async restoreVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
+    const { slug, id } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
+
+    const config: RequestInit = {
+      method: 'POST',
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = DocumentDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Retrieves a paginated list of versions for a global document.
+   *
+   * @param options.slug - The global slug.
+   * @param options.query - Optional QueryBuilder for filtering, sorting, pagination.
+   *
+   * @returns A paginated response containing version documents.
+   */
+  async findGlobalVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
+    const { slug, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions`, query);
+    const json = await this._fetch(url) ?? {};
+    const dto = PaginatedDocsDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Retrieves a single global version document by its ID.
+   *
+   * @param options.slug - The global slug.
+   * @param options.id - The version ID.
+   *
+   * @returns The version document.
+   */
+  async findGlobalVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
+    const { slug, id } = options;
+    const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
+    const json = await this._fetch(url) ?? {};
+    const dto = DocumentDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Restores a global document to a specific version.
+   *
+   * @param options.slug - The global slug.
+   * @param options.id - The version ID to restore.
+   *
+   * @returns The restored document.
+   */
+  async restoreGlobalVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
+    const { slug, id } = options;
+    const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
+
+    const config: RequestInit = {
+      method: 'POST',
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
+
+    return dto;
   }
 }
