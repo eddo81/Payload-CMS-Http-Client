@@ -99,14 +99,7 @@ export class QueryBuilder {
   sortByDescending(field: string): this {
     const _field = field.startsWith('-') ? field : `-${field}`;
 
-    if (!this._sort) {
-      this._sort = _field;
-    } 
-    else {
-      this._sort += `,${_field}`;
-    }
-
-    return this;
+    return this.sort(_field);
   }
 
   /**

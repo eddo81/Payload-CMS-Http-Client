@@ -112,6 +112,30 @@ The `Json` type (`lib/types/Json.ts`) is portable by concept. The core shape `Js
 
 The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry` and `JoinBuilder._getOrCreateClause()`. If a third consumer emerges, consider extracting a generic `Registry<T>` with a factory callback. Maps to `Registry<T>` in C# and Dart with no portability concerns.
 
+### Portability Audit (Completed)
+
+Audit performed and resolved. Three issues were fixed:
+
+1. **`JoinBuilder.build()` returned `Json | false | undefined`** — Union with a `false` literal has no clean equivalent in C#/Dart. Split into a `Json | undefined` return + a public `isDisabled` getter. `QueryBuilder` now checks `isDisabled` separately.
+2. **`isJsonObject` duplicated across 5 DTOs** — Extracted to shared utility in `lib/internal/utils/isJsonObject.ts`. Maps to a static helper in C# or a top-level function in Dart.
+3. **Unused `import { HttpClient }` in PayloadError.ts** — Removed (was only for JSDoc `{@link}`).
+
+The following TypeScript constructs have direct equivalents in C# and Dart and require only mechanical translation — no architectural changes needed:
+
+| TypeScript | C# | Dart |
+|---|---|---|
+| `fetch()` / `Response` / `RequestInit` | `HttpClient.SendAsync()` / `HttpResponseMessage` / `HttpRequestMessage` | `http.Client.send()` / `http.Response` / `http.Request` |
+| `Object.assign(target, source)` | `foreach (var kvp in source) target[kvp.Key] = kvp.Value;` | `target.addAll(source)` |
+| `delete headers["Key"]` | `headers.Remove("Key")` | `headers.remove("Key")` |
+| `Object.setPrototypeOf(this, X.prototype)` | Not needed (C# exception subclassing works natively) | Not needed (Dart `implements Exception` works natively) |
+| Type guards (`value is Json`) | Simple `bool` return method | Simple `bool` return method |
+| `extends Error` | `: Exception` | `implements Exception` |
+| `JSON.parse()` / `JSON.stringify()` | `JsonSerializer.Deserialize()` / `Serialize()` | `jsonDecode()` / `jsonEncode()` |
+| `encodeURIComponent()` | `Uri.EscapeDataString()` | `Uri.encodeComponent()` |
+| `Record<string, string>` | `Dictionary<string, string>` | `Map<String, String>` |
+| `Promise<T>` | `Task<T>` | `Future<T>` |
+| `??` / `?.` | `??` / `?.` | `??` / `?.` |
+
 ---
 
 ## Summary Checklist
@@ -175,9 +199,9 @@ Now that Tiers 1–4 are implemented, the following should be tackled in order:
 - [ ] Test error paths (invalid credentials, expired tokens, 403/404 responses)
 
 ### 2. Refinement & Simplification
-- [ ] Review all methods for opportunities to reduce duplication or simplify
-- [ ] Evaluate whether any DTOs can be consolidated without losing clarity
-- [ ] Audit portability: ensure no TypeScript-specific idioms that block C#/Dart porting
+- [x] Review all methods for opportunities to reduce duplication or simplify
+- [x] Evaluate whether any DTOs can be consolidated without losing clarity
+- [x] Audit portability: ensure no TypeScript-specific idioms that block C#/Dart porting
 
 ### 3. Documentation & Cleanup
 - [ ] Ensure all public methods and classes have terse, accurate JSDoc (move detailed descriptions to README)

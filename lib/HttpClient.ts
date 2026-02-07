@@ -14,7 +14,7 @@ import type { Json } from "./types/Json";
 
 export class HttpClient {
   private _baseUrl: string;
-  private _headers: Record<string, string>;
+  private _headers: Record<string, string> = {};
   private _auth: IAuthCredential | undefined = undefined;
   private _encoder: QueryStringEncoder = new QueryStringEncoder();
 
@@ -26,48 +26,38 @@ export class HttpClient {
       throw new Error(`[PayloadError] Invalid base URL: ${options.baseUrl}`, { cause: error });
     }
 
-    this._headers = {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    };
-
-    if (options.auth) {
-      this._auth = options.auth;
-      this._auth.applyTo(this._headers);
+    if(options.headers !== undefined) {
+      this.setHeaders(options.headers);
+    }
+    
+    if(options.auth !== undefined) {
+      this.setAuth(options.auth);
     }
   }
 
-  set headers(headers: Record<string, string>) {
-    this._headers = {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...headers,
-    };
-
-    this._syncAuth();
+ /**
+  * Sets the custom headers to include with every request.
+  *
+  * These headers are merged with the default headers (`Accept` and
+  * `Content-Type`) at request time. Any key defined here will
+  * override its default counterpart.
+  *
+  * @param {Record<string, string>} headers - The custom headers to set.
+  */
+  public setHeaders(headers: Record<string, string>): void {
+    this._headers = headers;
   }
 
-  set auth(auth: IAuthCredential | undefined) {
+ /**
+  * Sets or clears the authentication credential used for requests.
+  *
+  * When set, the credential's `applyTo` method is called at request
+  * time to inject the appropriate authorization header.
+  *
+  * @param {IAuthCredential | undefined} auth - The credential to use, or `undefined` to clear.
+  */
+  public setAuth(auth?: IAuthCredential | undefined): void {
     this._auth = auth;
-
-    this._syncAuth();
-  }
-
-  /**
-   * Synchronizes the `Authorization` header with the current
-   * authentication credential.
-   *
-   * - If a credential is set, delegates to its `applyTo` method.
-   * - If no credential is set, removes the `Authorization` header.
-   */
-  private _syncAuth(): void {
-    if (this._auth) {
-      this._auth.applyTo(this._headers);
-    }
-    else {
-      delete this._headers["Authorization"];
-    }
   }
 
  /**
@@ -129,17 +119,23 @@ export class HttpClient {
     let text: string;
     let json: Json | undefined = undefined;
 
-    const _config: RequestInit = {
-      method: 'GET',
-      ...config,
-      headers: {
-        ...this._headers,
-        ...(config.headers ?? {}),
-      },
+    let headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...this._headers,
     };
 
+    if (this._auth) {
+      this._auth.applyTo(headers);
+    }
+
     try {
-      response = await fetch(url, _config);
+      response = await fetch(url, {
+        method: 'GET',
+        ...config,
+        headers: headers,
+      });
+
       text = await response.text();
 
       if(text.length > 0) {
@@ -496,8 +492,6 @@ export class HttpClient {
 
     return dto;
   }
-
-  // ── Auth Operations ──────────────────────────────────────────────
 
   /**
    * Authenticates a user and returns a JWT token.

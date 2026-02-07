@@ -152,19 +152,9 @@ export class JoinBuilder {
   * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
   */
   sortByDescending(on: string, field: string): this {
-    if (field === '') {
-      return this;
-    } 
-
     const _field = field.startsWith('-') ? field : `-${field}`;
     
-    const clause = this._getOrCreateClause(on);
-    
-    if (clause !== undefined) {
-      clause.sort = _field;
-    } 
-
-    return this;
+    return this.sort(on, _field);
   }
 
  /**
