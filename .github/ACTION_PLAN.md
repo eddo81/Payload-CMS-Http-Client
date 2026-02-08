@@ -176,7 +176,7 @@ The following TypeScript constructs have direct equivalents in C# and Dart and r
 - [x] Implement `verifyEmail()` method
 
 **Tier 5 - Extensibility**
-- [ ] Expose public `request()` method for custom endpoints (mirrors SDK's escape hatch for non-standard routes)
+- [x] Expose public `request()` method for custom endpoints (mirrors SDK's escape hatch for non-standard routes)
 
 **Tier 4 - Versions**
 - [x] Implement `findVersions()` method
