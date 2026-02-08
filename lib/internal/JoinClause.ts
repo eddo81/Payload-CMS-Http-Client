@@ -2,38 +2,13 @@ import type { IClause } from "./contracts/IClause.js";
 import type { Json } from "../types/Json.js";
 
 /**
- * JoinClause
+ * Accumulates join-scoped operations for a single `Join Field`.
  *
- * Represents a single join target (`on`) and its associated
- * join-scoped operations (e.g. `limit`, `sort`, `where`, `count`).
- *
- * A JoinClause is a **mutable internal value object** used by
- * `JoinBuilder` to accumulate operations for a specific join field.
- * Multiple join operations targeting the same `on` field are
- * coalesced into a single clause instance.
- *
- * The final Payload-compatible structure is produced only when
- * `build()` is called.
- *
- * Example serialized output:
- *
- * ```ts
- * {
- *   relatedPosts: {
- *     limit: 5,
- *     sort: "title",
- *     where: { status: { equals: "published" } }
- *   }
- * }
- * ```
+ * Used internally by {@link JoinBuilder} to collect `limit`,
+ * `sort`, `where`, and `count` per join target.
  */
 export class JoinClause implements IClause {
- /**
-  * The relation field this join targets.
-  *
-  * This value is immutable for the lifetime of the clause and
-  * is used as the top-level join key in the serialized output.
-  */
+ /** The `Join Field` name this clause targets. */
   public readonly on: string;
 
   limit?: number;
@@ -52,12 +27,9 @@ export class JoinClause implements IClause {
   }
 
   /**
-   * Serializes the join clause into a Payload-compatible structure.
+   * Serializes the clause into a Payload-compatible structure.
    *
-   * This method does not mutate internal state and may be called
-   * multiple times safely.
-   *
-   * @returns {Json} A nested object suitable for query string encoding.
+   * @returns {Json} A nested object for query string encoding.
    */
   build(): Json {
     const inner: Json = {};

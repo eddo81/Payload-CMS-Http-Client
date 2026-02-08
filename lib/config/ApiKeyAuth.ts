@@ -1,17 +1,10 @@
 import type { IAuthCredential } from "../internal/contracts/IAuthCredential.js";
 
 /**
- * ApiKeyAuth
+ * {@link IAuthCredential} for Payload CMS `API Key` authentication.
  *
- * An {@link IAuthCredential} implementation for Payload CMS API key
- * authentication.
- *
- * Payload CMS expects API key credentials in the `Authorization`
- * header using the format:
- *
- *     {collectionSlug} API-Key {apiKey}
- *
- * For example: `users API-Key abc123`
+ * Sets the `Authorization` header to:
+ * `{collectionSlug} API-Key {apiKey}`
  *
  * @see https://payloadcms.com/docs/authentication/api-keys
  */

@@ -1,15 +1,9 @@
 import type { IAuthCredential } from "../internal/contracts/IAuthCredential.js";
 
 /**
- * JwtAuth
+ * {@link IAuthCredential} for Payload CMS `JWT` authentication.
  *
- * An {@link IAuthCredential} implementation for Payload CMS JWT
- * authentication.
- *
- * Payload CMS expects JWT credentials in the `Authorization`
- * header using the format:
- *
- *     Bearer {token}
+ * Sets the `Authorization` header to: `Bearer {token}`
  *
  * @see https://payloadcms.com/docs/authentication/token-data
  */

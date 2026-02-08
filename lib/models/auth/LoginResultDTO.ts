@@ -3,13 +3,7 @@ import { isJsonObject } from "../../internal/utils/isJsonObject.js";
 import type { Json } from "../../types/Json.js";
 
 /**
- * LoginResultDTO
- *
- * A data transfer object representing the response from a
- * Payload CMS login endpoint.
- *
- * Contains the JWT token, its expiration timestamp, the
- * authenticated user document, and a status message.
+ * Represents the response from a Payload CMS `login` endpoint.
  */
 export class LoginResultDTO {
   token: string = '';
@@ -20,8 +14,9 @@ export class LoginResultDTO {
   /**
    * Maps a plain JSON object into a {@link LoginResultDTO}.
    *
-   * @param {Json} json - The raw JSON object from a Payload CMS login endpoint.
-   * @returns {LoginResultDTO} A populated LoginResultDTO instance.
+   * @param {Json} json - The raw JSON from a Payload CMS `login` endpoint.
+   *
+   * @returns {LoginResultDTO} A populated instance.
    */
   static fromJson(json: Json): LoginResultDTO {
     const dto = new LoginResultDTO();

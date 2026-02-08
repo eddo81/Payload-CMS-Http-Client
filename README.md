@@ -28,30 +28,40 @@ const client = new HttpClient({ baseUrl: 'http://localhost:3000' });
 ### CRUD Operations
 
 ```typescript
-// Create
-const post = await client.create({
-  slug: 'posts',
-  data: { title: 'Hello World', content: 'My first post.' },
-});
-console.log(post.id); // "6801a..."
+import { HttpClient, PayloadError } from 'payload-cms-http-client';
 
-// Find all
-const posts = await client.find({ slug: 'posts' });
-console.log(posts.docs.length); // 1
+try {
+  // Create
+  const post = await client.create({
+    slug: 'posts',
+    data: { title: 'Hello World', content: 'My first post.' },
+  });
+  console.log(post.id); // "6801a..."
 
-// Find by ID
-const found = await client.findById({ slug: 'posts', id: post.id });
-console.log(found.json['title']); // "Hello World"
+  // Find all
+  const posts = await client.find({ slug: 'posts' });
+  console.log(posts.docs.length); // 1
 
-// Update by ID
-const updated = await client.updateById({
-  slug: 'posts',
-  id: post.id,
-  data: { title: 'Updated Title' },
-});
+  // Find by ID
+  const found = await client.findById({ slug: 'posts', id: post.id });
+  console.log(found.json['title']); // "Hello World"
 
-// Delete by ID
-const deleted = await client.deleteById({ slug: 'posts', id: post.id });
+  // Update by ID
+  const updated = await client.updateById({
+    slug: 'posts',
+    id: post.id,
+    data: { title: 'Updated Title' },
+  });
+
+  // Delete by ID
+  const deleted = await client.deleteById({ slug: 'posts', id: post.id });
+
+} catch (error) {
+  if (error instanceof PayloadError) {
+    console.log(error.statusCode); // 400, 404, 500, etc.
+    console.log(error.cause);      // Parsed JSON error body from Payload
+  }
+}
 ```
 
 ### Querying
@@ -67,6 +77,8 @@ const results = await client.find({
     .limit(10)
     .page(2),
 });
+
+// Query string: ?where[status][equals]=published&sort=createdAt&limit=10&page=2
 ```
 
 #### Nested Where Clauses
@@ -82,6 +94,8 @@ const results = await client.find({
         .where('category', 'equals', 'blog');
     }),
 });
+
+// Query string: ?where[status][equals]=published&where[or][0][category][equals]=news&where[or][1][category][equals]=blog
 ```
 
 #### Joins

@@ -3,13 +3,7 @@ import { isJsonObject } from "../../internal/utils/isJsonObject.js";
 import type { Json } from "../../types/Json.js";
 
 /**
- * MeResultDTO
- *
- * A data transfer object representing the response from a
- * Payload CMS "me" endpoint.
- *
- * Contains the currently authenticated user document and
- * optional token/session metadata.
+ * Represents the response from a Payload CMS `me` endpoint.
  */
 export class MeResultDTO {
   user: DocumentDTO = new DocumentDTO();
@@ -21,8 +15,9 @@ export class MeResultDTO {
   /**
    * Maps a plain JSON object into a {@link MeResultDTO}.
    *
-   * @param {Json} json - The raw JSON object from a Payload CMS me endpoint.
-   * @returns {MeResultDTO} A populated MeResultDTO instance.
+   * @param {Json} json - The raw JSON from a Payload CMS `me` endpoint.
+   *
+   * @returns {MeResultDTO} A populated instance.
    */
   static fromJson(json: Json): MeResultDTO {
     const dto = new MeResultDTO();

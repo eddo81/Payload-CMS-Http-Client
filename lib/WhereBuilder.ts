@@ -6,16 +6,19 @@ import type { Operator } from "./types/Operator.js";
 import type { Json, JsonValue } from "./types/Json.js";
 
 /**
- * WhereBuilder
- *
- * Provides a fluent API for building nested where/and/or
- * clauses using composable clause strategies.
+ * Fluent builder for nested `where`/`and`/`or` clauses.
  */
 export class WhereBuilder {
   private readonly _clauses: IClause[] = [];
 
   /**
-   * Adds a simple comparison clause.
+   * Adds a field comparison clause.
+   *
+   * @param {string} field - The field name.
+   * @param {Operator} operator - The comparison operator.
+   * @param {JsonValue} value - The value to compare against.
+   *
+   * @returns {this} The current builder for chaining.
    */
   where(field: string, operator: Operator, value: JsonValue): this {
     this._clauses.push(new WhereClause(field, operator, value));
@@ -25,6 +28,10 @@ export class WhereBuilder {
 
   /**
    * Adds a nested `AND` group of clauses.
+   *
+   * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+   *
+   * @returns {this} The current builder for chaining.
    */
   and(callback: (builder: WhereBuilder) => void): this {
     const builder = new WhereBuilder();
@@ -38,6 +45,10 @@ export class WhereBuilder {
 
   /**
    * Adds a nested `OR` group of clauses.
+   *
+   * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+   *
+   * @returns {this} The current builder for chaining.
    */
   or(callback: (builder: WhereBuilder) => void): this {
     const builder = new WhereBuilder();
@@ -50,8 +61,9 @@ export class WhereBuilder {
   }
 
   /**
-   * Serializes the entire where/and/or tree into a flat
-   * key-value structure ready for query string encoding.
+   * Builds the `where` clause object.
+   *
+   * @returns {Json | undefined} The clause object, or `undefined` if empty.
    */
   build(): Json | undefined {
     if(this._clauses.length === 0) {

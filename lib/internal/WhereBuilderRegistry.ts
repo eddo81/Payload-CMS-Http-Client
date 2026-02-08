@@ -1,30 +1,22 @@
 import { WhereBuilder } from "../WhereBuilder.js";
 
 /**
- * WhereBuilderRegistry
+ * Lazily provisions and caches {@link WhereBuilder} instances by key.
  *
- * A keyed registry that lazily provisions and caches `WhereBuilder`
- * instances. Each key maps to a single `WhereBuilder`, which is
- * created on first access and reused on subsequent lookups.
- *
- * This ensures that multiple calls targeting the same key accumulate
- * clauses into a shared `WhereBuilder` instance rather than replacing
- * previous state.
- *
- * Used internally by `JoinBuilder` to manage per-join-field where
- * clause composition.
+ * Used by {@link JoinBuilder} to accumulate `where` clauses
+ * per `Join Field`.
  */
 export class WhereBuilderRegistry {
   private readonly _store: Map<string, WhereBuilder> = new Map();
 
  /**
-  * Returns the `WhereBuilder` for the given key.
+  * Returns the {@link WhereBuilder} for the given key.
   *
-  * If no `WhereBuilder` exists for the key, a new one is created
-  * and stored before being returned.
+  * Creates and caches a new instance on first access.
   *
-  * @param {string} key - The registry key (e.g. a join field name).
-  * @returns {WhereBuilder} The existing or newly created `WhereBuilder`.
+  * @param {string} key - The registry key (e.g. a `Join Field` name).
+  *
+  * @returns {WhereBuilder} The cached or newly created builder.
   */
   get(key: string): WhereBuilder {
     let builder = this._store.get(key);

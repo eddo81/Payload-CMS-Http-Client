@@ -3,10 +3,7 @@ import { isJsonObject } from "../../internal/utils/isJsonObject.js";
 import type { Json } from "../../types/Json.js";
 
 /**
- * PaginatedDocsDTO
- *
- * A data transfer object representing a paginated collection of
- * documents from a Payload CMS API endpoint.
+ * Represents a paginated collection of Payload CMS documents.
  */
 export class PaginatedDocsDTO {
   docs: DocumentDTO[] = [];
@@ -20,18 +17,11 @@ export class PaginatedDocsDTO {
   prevPage?: number | undefined = undefined;
 
  /**
-  * Maps a paginated Payload CMS JSON response into a
-  * {@link PaginatedDocsDTO}.
+  * Maps a paginated JSON response into a {@link PaginatedDocsDTO}.
   *
-  * Nested document records are mapped individually using
-  * {@link DocumentDTO.fromJson}, and only valid JSON objects
-  * are considered during mapping.
+  * @param {Json} json - The raw JSON from a Payload CMS endpoint.
   *
-  * Missing or malformed fields are ignored, allowing the factory
-  * to safely handle partial or unexpected API responses.
-  *
-  * @param {Json} json - The raw JSON payload returned by a Payload CMS endpoint.
-  * @returns {PaginatedDocsDTO} A populated PaginatedDocsDTO instance.
+  * @returns {PaginatedDocsDTO} A populated instance.
   */
   static fromJson(json: Json): PaginatedDocsDTO {
     const dto = new PaginatedDocsDTO();

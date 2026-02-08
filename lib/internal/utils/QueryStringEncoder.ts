@@ -1,41 +1,9 @@
 /**
- * QueryStringEncoder
+ * Serializes nested objects into Payload CMS query strings.
  *
- * Serializes a nested object into a query string compatible with **Payload CMS**.
- *
- * This encoder is designed to preserve Payload's nested query structure
- * (e.g. `where[title][equals]=foo`) while ensuring URL-safe encoding. It uses
- * `encodeURIComponent()` internally but selectively preserves certain
- * characters that are meaningful to Payload's syntax:
- *
- * - Square brackets `[]` — used for representing nested properties
- * - Commas `,` — used for comma-separated lists (e.g. `select=title,author`)
- *
- * The encoder supports:
- * - Nested objects and arrays
- * - Index-based array serialization (e.g. `populate[0][comments][text]=true`)
- * - Primitive values (string, number, boolean, Date)
- * - ISO-8601 date formatting
- *
- * ### Example
- * ```ts
- * const encoder = new QueryStringEncoder();
- * const query = encoder.stringify({
- *   select: ['title', 'author'],
- *   where: {
- *     or: [
- *       { title: { equals: 'foo' } },
- *       { title: { equals: 'bar' } }
- *     ]
- *   }
- * });
- *
- * // Output:
- * // "?select=title,author&where[or][0][title][equals]=foo&where[or][1][title][equals]=bar"
- * ```
- *
- * This class is designed for **cross-language portability** (TypeScript, Dart, C#),
- * and avoids language-specific constructs to make porting straightforward.
+ * Preserves Payload's bracketed syntax (e.g. `where[title][equals]=foo`)
+ * while URL-encoding values. Square brackets `[]` and commas `,` are
+ * left unescaped by default as they carry semantic meaning.
  */
 export class QueryStringEncoder {
   private readonly _addQueryPrefix: boolean;
@@ -44,8 +12,8 @@ export class QueryStringEncoder {
  /**
   * Creates a new QueryStringEncoder.
   *
-  * @param options.addQueryPrefix - When `true`, output is prefixed with `?`. Defaults to `true`.
-  * @param options.strictEncoding - When `true`, brackets and commas remain percent-encoded. Defaults to `false`.
+  * @param {boolean} [options.addQueryPrefix=true] - Prefix output with `?`.
+  * @param {boolean} [options.strictEncoding=false] - Keep brackets and commas percent-encoded.
   */
   public constructor(options?: { addQueryPrefix?: boolean; strictEncoding?: boolean }) {
     this._addQueryPrefix = options?.addQueryPrefix ?? true;
@@ -57,14 +25,11 @@ export class QueryStringEncoder {
   }
 
   /**
-   * Converts the provided object into a Payload-compatible query string.
+   * Converts an object into a Payload-compatible query string.
    *
-   * This is the primary entry point for consumers. It returns an empty string
-   * if the input object cannot be serialized or contains no valid entries.
-   * When a non-empty query string is produced, it is prefixed with `?`.
+   * @param {Record<string, unknown>} obj - The object to serialize.
    *
-   * @param {Record<string, unknown>} obj - The object to serialize into a query string.
-   * @returns The serialized query string prefixed with `?`, or an empty string if no entries exist.
+   * @returns {string} The query string (prefixed with `?`), or empty string.
    */
   public stringify(obj: Record<string, unknown>): string {
     const result = this._serialize(obj, '') ?? '';
@@ -77,13 +42,14 @@ export class QueryStringEncoder {
   }
 
   /**
-   * Encodes a string value for safe inclusion in a query string.
+   * Encodes a string for safe query string inclusion.
    *
-   * Wraps `encodeURIComponent()` but *preserves* characters meaningful to
-   * Payload CMS query syntax, specifically square brackets (`[]`) and commas (`,`).
+   * Preserves `[]` and `,` which are meaningful
+   * to Payload CMS query syntax.
    *
    * @param {string} value - The string to encode.
-   * @returns The encoded string, with `[]` and `,` left unescaped.
+   *
+   * @returns {string} The encoded string.
    */
   private _safeEncode(value: string): string {
     const encoded = encodeURIComponent(value);
@@ -99,16 +65,12 @@ export class QueryStringEncoder {
   }
 
   /**
-   * Recursively serializes an object, array, or primitive into query string segments.
+   * Recursively serializes an object into query string segments.
    *
-   * This method performs a depth-first traversal of the input value and builds
-   * compound keys using Payload's bracketed query syntax. Each key/value pair
-   * is encoded and appended to the accumulated query string.
+   * @param {Record<string, unknown>} obj - The object to serialize.
+   * @param {string} parentKey - The accumulated key path (e.g. `where[title]`).
    *
-   * @param {Record<string, unknown>} obj - The current object or value being serialized.
-   * @param {string} parentKey - The accumulated key path representing the current position in the nested structure.
-   *                 For example, in `where[title][equals]`, `parentKey` may be `where[title]`.
-   * @returns A query string fragment, or `null` if the object contains no valid entries.
+   * @returns {string | null} A query string fragment, or `null` if empty.
    */
   private _serialize(obj: Record<string, unknown>, parentKey: string): string | null {
     const segments: string[] = [];
@@ -157,44 +119,33 @@ export class QueryStringEncoder {
   }
 
   /**
-   * Determines whether the provided value is a plain object.
+   * Determines whether the value is a plain object.
    *
-   * Plain objects are defined as non-null objects that are not arrays or Dates.
+   * @param {unknown} value - The value to inspect.
    *
-   * @param {Record<string, unknown>} value - The value to inspect.
-   * @returns {boolean} `true` if the value is a plain object, otherwise `false`.
+   * @returns {boolean} `true` if a plain object, `false` otherwise.
    */
   private _isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date);
   }
 
   /**
-   * Determines whether the provided value is a supported primitive type.
+   * Determines whether the value is a serializable primitive.
    *
-   * Primitives supported by Payload CMS include strings, numbers, booleans,
-   * and Date instances. All other types (e.g. symbols, functions) are ignored.
+   * @param {unknown} value - The value to inspect.
    *
-   * @param value - The value to inspect.
-   * @returns `true` if the value is a serializable primitive, otherwise `false`.
+   * @returns {boolean} `true` if serializable, `false` otherwise.
    */
   private _isPrimitive(value: unknown): boolean {
     return (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value instanceof Date);
   }
 
   /**
-   * Serializes an array using index-based notation (e.g. `key[0]=a&key[1]=b`).
+   * Serializes an array using index-based notation.
    *
-   * Each element is serialized based on its type:
-   * - **Primitives:** encoded as `key[index]=value`
-   * - **Objects:** recursively serialized into nested paths
-   * - **Arrays:** handled recursively to any depth
-   *
-   * Null or undefined entries are skipped. Unsupported types (e.g. symbols,
-   * bigints, or functions) are ignored.
-   *
-   * @param arr - The array to serialize.
-   * @param parentKey - The current key path (e.g. `populate` or `where[tags]`).
-   * @param segments - The array of accumulated query segments.
+   * @param {unknown[]} arr - The array to serialize.
+   * @param {string} parentKey - The current key path (e.g. `where[tags]`).
+   * @param {string[]} segments - The accumulated query segments.
    */
   private _serializeArray(arr: unknown[], parentKey: string, segments: string[]): void {
     for (let i = 0; i < arr.length; i++) {
@@ -233,14 +184,12 @@ export class QueryStringEncoder {
   }
 
   /**
-   * Serializes a primitive value into a single `key=value` pair.
+   * Serializes a primitive into a `key=value` pair.
    *
-   * Dates are converted to ISO 8601 strings.
-   * Unsupported types (`symbol`, `bigint`) return `null`.
+   * @param {string} key - The full key path (e.g. `where[title][equals]`).
+   * @param {unknown} value - The primitive value to encode.
    *
-   * @param key - The full encoded key path (e.g. `where[title][equals]`).
-   * @param value - The primitive value to encode.
-   * @returns A `key=value` string, or `null` if the value cannot be serialized.
+   * @returns {string | null} A `key=value` string, or `null` if unsupported.
    */
   private _serializePrimitive(key: string, value: unknown): string | null {
     if (typeof value === 'symbol' || typeof value === 'bigint') {

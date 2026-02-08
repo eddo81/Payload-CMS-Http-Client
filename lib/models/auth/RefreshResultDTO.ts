@@ -3,13 +3,7 @@ import { isJsonObject } from "../../internal/utils/isJsonObject.js";
 import type { Json } from "../../types/Json.js";
 
 /**
- * RefreshResultDTO
- *
- * A data transfer object representing the response from a
- * Payload CMS refresh-token endpoint.
- *
- * Contains the new JWT token, its expiration timestamp,
- * and the authenticated user document.
+ * Represents the response from a Payload CMS `refresh-token` endpoint.
  */
 export class RefreshResultDTO {
   refreshedToken: string = '';
@@ -19,8 +13,9 @@ export class RefreshResultDTO {
   /**
    * Maps a plain JSON object into a {@link RefreshResultDTO}.
    *
-   * @param {Json} json - The raw JSON object from a Payload CMS refresh-token endpoint.
-   * @returns {RefreshResultDTO} A populated RefreshResultDTO instance.
+   * @param {Json} json - The raw JSON from a Payload CMS `refresh-token` endpoint.
+   *
+   * @returns {RefreshResultDTO} A populated instance.
    */
   static fromJson(json: Json): RefreshResultDTO {
     const dto = new RefreshResultDTO();

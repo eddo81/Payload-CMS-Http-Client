@@ -1,13 +1,9 @@
 import type { Json } from "../../types/Json.js";
 
 /**
- * MessageDTO
+ * Represents a simple message response from Payload CMS.
  *
- * A data transfer object representing a simple message response
- * from Payload CMS.
- *
- * Used by endpoints that return only a status message, such as
- * forgot-password and verify-email.
+ * Used by `forgot-password` and `verify-email` endpoints.
  */
 export class MessageDTO {
   message: string = '';
@@ -15,8 +11,9 @@ export class MessageDTO {
   /**
    * Maps a plain JSON object into a {@link MessageDTO}.
    *
-   * @param {Json} json - The raw JSON object from a Payload CMS endpoint.
-   * @returns {MessageDTO} A populated MessageDTO instance.
+   * @param {Json} json - The raw JSON from a Payload CMS endpoint.
+   *
+   * @returns {MessageDTO} A populated instance.
    */
   static fromJson(json: Json): MessageDTO {
     const dto = new MessageDTO();

@@ -1,15 +1,11 @@
 import type { Json } from "../../types/Json.js";
 
 /**
- * DocumentDTO
+ * Represents a Payload CMS document.
  *
- * A data transfer object representing a document; a record with a
- * specific schema defined within Payload CMS.
- *
- * The `json` field retains the full raw response, including `id`,
- * `createdAt`, and `updatedAt`. This intentional redundancy ensures
- * that all user-defined fields remain accessible without the DTO
- * needing to model every possible schema.
+ * The `json` field retains the full raw response so
+ * user-defined fields remain accessible without the
+ * DTO modeling every possible schema.
  */
 export class DocumentDTO {
   json: Json = {};
@@ -20,12 +16,9 @@ export class DocumentDTO {
  /**
   * Maps a plain JSON object into a {@link DocumentDTO}.
   *
-  * Transport-level primitives are interpreted and normalized
-  * into appropriate domain types (e.g. ISO date strings into
-  * {@link Date} instances).
+  * @param {Json} json - The raw JSON from a Payload CMS endpoint.
   *
-  * @param {Json} json - The raw JSON object received from a Payload CMS endpoint.
-  * @returns {DocumentDTO} A populated DocumentDTO instance.
+  * @returns {DocumentDTO} A populated instance.
   */
   static fromJson(json: Json): DocumentDTO {
     const dto = new DocumentDTO();
@@ -53,11 +46,9 @@ export class DocumentDTO {
  /**
   * Maps a {@link DocumentDTO} into a plain JSON object.
   *
-  * Non-JSON primitives (such as {@link Date}) are normalized
-  * into transport-safe representations.
+  * @param {DocumentDTO} dto - The instance to serialize.
   *
-  * @param {DocumentDTO} dto - The DocumentDTO to map.
-  * @returns {Json} A plain JSON object suitable for Payload CMS transport.
+  * @returns {Json} A plain JSON object for transport.
   */
   static toJson(dto: DocumentDTO): Json {
     const result: Json = {

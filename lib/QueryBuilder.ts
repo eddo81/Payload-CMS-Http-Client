@@ -5,14 +5,10 @@ import { JoinBuilder } from "./JoinBuilder.js";
 import type { Json } from "./types/Json.js";
 
 /**
- * QueryBuilder
+ * Fluent builder for Payload CMS REST API query parameters.
  *
- * Orchestrates the construction of PayloadCMS query parameters.
- * Supports method chaining for configuring limits, pagination, sorting,
- * filtering, population, and joins.
- *
- * Acts as a facade that utilizes WhereBuilder and JoinBuilder
- * for composing advanced query logic.
+ * Delegates filtering to {@link WhereBuilder} and
+ * join configuration to {@link JoinBuilder}.
  */
 export class QueryBuilder {
   private _limit?: number;
@@ -27,15 +23,11 @@ export class QueryBuilder {
   private readonly _joinBuilder: JoinBuilder = new JoinBuilder();
 
   /**
-   * Limit the number of results returned by the query.
+   * Limits the number of documents returned.
    *
-   * @param {number} value - Maximum number of documents to return.
-   * 
-   * @example
-   * const query = new QueryBuilder();
-   * query.limit(10);
-   * 
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @param {number} value - Maximum document count.
+   *
+   * @returns {this} The current builder for chaining.
    */
   limit(value: number): this {
     this._limit = value;
@@ -44,16 +36,11 @@ export class QueryBuilder {
   }
 
   /**
-   * Set the page of results to retrieve.
-   * Used together with `.limit()` to paginate results.
+   * Sets the page of results to retrieve (1-based).
    *
-   * @param {number} value - The page number (1-based).
+   * @param {number} value - The page number.
    *
-   * @example
-   * const query = new QueryBuilder();
-   * query.page(2).limit(20);
-   *
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @returns {this} The current builder for chaining.
    */
   page(value: number): this {
     this._page = value;
@@ -62,16 +49,13 @@ export class QueryBuilder {
   }
 
   /**
-   * Sort results in ascending order by the specified field.
-   * Can be called multiple times to sort by multiple fields.
+   * Sorts results ascending by the given field.
    *
-   * @param {string} field - The field to sort by.
+   * Can be called multiple times for multi-field sorts.
    *
-   * @example
-   * const query = new QueryBuilder();
-   * query.sort('title').sort('createdAt');
+   * @param {string} field - The field name to sort by.
    *
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @returns {this} The current builder for chaining.
    */
   sort(field: string): this {
     if (!this._sort) {
@@ -85,16 +69,13 @@ export class QueryBuilder {
   }
 
   /**
-   * Sort results in descending order by the specified field.
-   * Can be called multiple times to sort by multiple fields.
+   * Sorts results descending by the given field.
    *
-   * @param {string} field - The field to sort by. If not prefixed with '-', it will be automatically prefixed.
+   * Automatically prefixes the field with `-` if needed.
    *
-   * @example
-   * const query = new QueryBuilder();
-   * query.sortByDescending('createdAt');
+   * @param {string} field - The field name to sort by.
    *
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @returns {this} The current builder for chaining.
    */
   sortByDescending(field: string): this {
     const _field = field.startsWith('-') ? field : `-${field}`;
@@ -103,15 +84,11 @@ export class QueryBuilder {
   }
 
   /**
-   * Specify the population depth of related documents.
+   * Sets the population `depth` for related documents.
    *
-   * @param {number} value - Depth level to populate (0 = none, 1 = direct relations, etc.).
+   * @param {number} value - Depth level (0 = none, 1 = direct, etc.).
    *
-   * @example
-   * const query = new QueryBuilder();
-   * query.depth(2);
-   *
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @returns {this} The current builder for chaining.
    */
   depth(value: number): this {
     this._depth = value;
@@ -120,15 +97,11 @@ export class QueryBuilder {
   }
 
   /**
-   * Set the locale used for querying localized fields.
+   * Sets the `locale` for querying localized fields.
    *
-   * @param {string} value - A locale string such as 'en', 'sv', etc.
+   * @param {string} value - A locale string (e.g. `'en'`, `'sv'`).
    *
-   * @example
-   * const query = new QueryBuilder();
-   * query.locale('sv');
-   *
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @returns {this} The current builder for chaining.
    */
   locale(value: string): this {
     this._locale = value;
@@ -137,15 +110,11 @@ export class QueryBuilder {
   }
 
   /**
-   * Set a fallback locale to use when localized values are missing.
+   * Sets a `fallback locale` when localized values are missing.
    *
-   * @param {string} value - A fallback locale string (e.g., 'en' or 'default').
+   * @param {string} value - A fallback locale string (e.g. `'en'`).
    *
-   * @example
-   * const query = new QueryBuilder();
-   * query.fallbackLocale('default');
-   *
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @returns {this} The current builder for chaining.
    */
   fallbackLocale(value: string): this {
     this._fallbackLocale = value;
@@ -154,21 +123,14 @@ export class QueryBuilder {
   }
 
   /**
-   * Specify which fields to include in the result.
+   * Specifies which fields to include in the result.
    *
-   * Supports dot notation for nested selections. For example:
-   *   .select(['title', 'author.name', 'comments.user.email'])
+   * Supports dot notation for nested selections
+   * (e.g. `['title', 'author.name']`).
    *
-   * This will result in: 
-   *   select=title,author.name,comments.user.email
+   * @param {string[]} fields - Field names to include.
    *
-   * @param {string[]} fields - An array of field names, optionally using dot notation for nesting.
-   * 
-   * @example
-   * const query = new QueryBuilder();
-   * query.select(['title', 'author.name']);
-   * 
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @returns {this} The current builder for chaining.
    */
   select(fields: string[]): this {
     if (!this._select) {
@@ -182,17 +144,11 @@ export class QueryBuilder {
   }
 
   /**
-   * Define which relational fields to populate in the result.
-   * Unlike `select()`, this doesn't support nested population.
-   * It simply flags top-level relationships for inclusion.
+   * Flags top-level `relationship` fields for population.
    *
-   * @param {string[]} fields - An array of field names to populate.
-   * 
-   * @example
-   * const query = new QueryBuilder();
-   * query.populate(['author', 'comments']);
-   * 
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @param {string[]} fields - Relationship field names to populate.
+   *
+   * @returns {this} The current builder for chaining.
    */
   populate(fields: string[]): this {
     this._populate = fields.join(',');
@@ -201,18 +157,15 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a field comparison to the query's filtering logic.
-   * Delegates to the internal WhereBuilder.
+   * Adds a field comparison to the `where` clause.
+   *
+   * Delegates to the internal {@link WhereBuilder}.
    *
    * @param {string} field - The field name.
    * @param {Operator} operator - The comparison operator.
-   * @param {string} value - The value to compare against.
-   * 
-   * @example
-   * const query = new QueryBuilder();
-   * query.where('category', 'equals', 'news');
-   * 
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * @param {JsonValue} value - The value to compare against.
+   *
+   * @returns {this} The current builder for chaining.
    */
   where(field: string, operator: Operator, value: JsonValue): this {
     this._whereBuilder.where(field, operator, value);
@@ -221,21 +174,13 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a nested `AND` group of conditions. Delegates to a fresh WhereBuilder 
-   * instance via callback. This method allows you to group multiple conditions 
-   * together using logical `AND`, enabling deeply nested conditional queries.
-   * 
-   * @example
-   * const query = new QueryBuilder();
-   * query.and(builder => {
-   *   builder
-   *      .where('status', 'published')
-   *      .where('category', 'news');
-   * });
-   * 
-   * @param callback - Callback function receiving a new WhereBuilder for nested conditions.
-   * 
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * Adds a nested `AND` group of `where` conditions.
+   *
+   * Delegates to a fresh {@link WhereBuilder} via callback.
+   *
+   * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+   *
+   * @returns {this} The current builder for chaining.
    */
   and(callback: (builder: WhereBuilder) => void): this {
     this._whereBuilder.and(callback);
@@ -244,21 +189,13 @@ export class QueryBuilder {
   }
 
   /**
-   * Adds a nested `OR` group of conditions. Delegates to a fresh WhereBuilder
-   * instance via callback. This method allows you to group multiple conditions
-   * together using logical `OR`, enabling complex nested conditional logic.
-   * 
-   * @example
-   * const query = new QueryBuilder();
-   * query.or(builder => {
-   *   builder
-   *      .where('title', 'like', 'draft')
-   *      .where('status', 'not_equals', 'archived');
-   * });
-   * 
-   * @param callback - Callback function receiving a new WhereBuilder for nested conditions.
-   * 
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * Adds a nested `OR` group of `where` conditions.
+   *
+   * Delegates to a fresh {@link WhereBuilder} via callback.
+   *
+   * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+   *
+   * @returns {this} The current builder for chaining.
    */
   or(callback: (builder: WhereBuilder) => void): this {
     this._whereBuilder.or(callback);
@@ -267,24 +204,21 @@ export class QueryBuilder {
   }
 
   /**
-   * Adds a join clause to include related documents in the query. This method 
-   * allows specifying a relation to join, optionally aliasing the joined data 
-   * and applying nested join conditions. Joins in PayloadCMS act as a population 
-   * mechanism, ie they expand the returned documents with related data.
+   * Configures `Join Field` population via callback.
    *
-   * @param callback - Callback function using a JoinBuilder.
+   * Delegates to the internal {@link JoinBuilder} for
+   * filtering, sorting, and limiting joined data.
+   *
+   * @param {Function} callback - Receives the {@link JoinBuilder} instance.
+   *
+   * @returns {this} The current builder for chaining.
    *
    * @example
-   * const query = new QueryBuilder();
-   * query
-   *    .join(joinBuilder => { 
-   *        joinBuilder
-   *          .where('posts', 'author', 'equals', 'Alice')
-   *          .sortByDescending('posts', 'title')
-   *          .limit('posts', 1);
-   *    });
-   *
-   * @returns {QueryBuilder} The current QueryBuilder instance for further chaining.
+   * query.join(j => {
+   *   j.where('posts', 'author', 'equals', 'Alice')
+   *    .sortByDescending('posts', 'title')
+   *    .limit('posts', 1);
+   * });
    */
   join(callback: (builder: JoinBuilder) => void): this {
     callback(this._joinBuilder);
@@ -293,20 +227,12 @@ export class QueryBuilder {
   }
 
   /**
-   * Build the final set of query parameters to be submitted to a PayloadCMS REST API 
-   * endpoint. This method performs an outbound transport mapping from domain-level query
-   * intent into a JSON-compatible shape suitable for query string serialization.
-   * 
-   * @example
-   * const query = new QueryBuilder();
-   * query
-   *   .limit(10)
-   *   .page(2)
-   *   .sort('title');
-   *   
-   * const params = query.build();
-   * 
-   * @returns {Json} A plain JSON object suitable for query string serialization.
+   * Builds the final query parameters object.
+   *
+   * Serializes all configured options into a plain
+   * JSON object for query string encoding.
+   *
+   * @returns {Json} Query parameters ready for serialization.
    */
   build(): Json {
     const where: Json | undefined = this._whereBuilder.build();

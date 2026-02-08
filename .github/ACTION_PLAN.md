@@ -206,8 +206,8 @@ Now that Tiers 1–4 are implemented, the following should be tackled in order:
 - [x] Audit portability: ensure no TypeScript-specific idioms that block C#/Dart porting
 
 ### 3. Documentation & Cleanup
-- [ ] Ensure all public methods and classes have terse, accurate JSDoc (move detailed descriptions to README)
-- [ ] Create `README.md` with:
+- [x] Ensure all public methods and classes have terse, accurate JSDoc (move detailed descriptions to README)
+- [x] Create `README.md` with:
   - Library overview and installation
   - Detailed descriptions of each public class and method
   - Code examples for common use cases (CRUD, auth, queries, joins, globals, versions)

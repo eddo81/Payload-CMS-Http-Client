@@ -15,6 +15,12 @@ import type { IFileUpload } from "./internal/contracts/IFileUpload.js";
 import { FormDataBuilder } from "./internal/upload/FormDataBuilder.js";
 import { HttpMethod } from "./types/HttpMethod.js";
 
+/**
+ * HTTP client for the Payload CMS REST API.
+ *
+ * Provides typed methods for `collections`, `globals`,
+ * `auth`, `versions`, and file uploads.
+ */
 export class HttpClient {
   private _baseUrl: string;
   private _headers: Record<string, string> = {};
@@ -36,15 +42,14 @@ export class HttpClient {
  /**
   * Validates and normalizes a base URL string.
   *
-  * Uses the `URL` constructor to reject malformed URLs, then strips
-  * any trailing slashes to prevent double-slash paths when building
-  * endpoint URLs (e.g. `baseUrl + "/api/..."` ).
+  * Strips trailing slashes to prevent double-slash
+  * paths when building endpoint URLs.
   *
   * @param {string} url - The raw base URL to normalize.
   *
   * @returns {string} The normalized URL without a trailing slash.
   *
-  * @throws Error if the URL is malformed.
+  * @throws {Error} If the URL is malformed.
   */
   private _normalizeUrl(url: string): string {
     try {
@@ -61,42 +66,44 @@ export class HttpClient {
  /**
   * Sets the custom headers to include with every request.
   *
-  * These headers are merged with the default headers (`Accept` and
-  * `Content-Type`) at request time. Any key defined here will
-  * override its default counterpart.
+  * These are merged with the default `Accept` and
+  * `Content-Type` headers at request time.
   *
   * @param {Record<string, string>} headers - The custom headers to set.
+  *
+  * @returns {void}
   */
   public setHeaders(headers: Record<string, string>): void {
     this._headers = headers;
   }
 
  /**
-  * Sets or clears the authentication credential used for requests.
+  * Sets or clears the authentication credential.
   *
-  * When set, the credential's `applyTo` method is called at request
-  * time to inject the appropriate authorization header.
+  * Pass an {@link IAuthCredential} to inject authorization
+  * headers, or `undefined` to clear.
   *
   * @param {IAuthCredential | undefined} auth - The credential to use, or `undefined` to clear.
+  *
+  * @returns {void}
   */
   public setAuth(auth?: IAuthCredential | undefined): void {
     this._auth = auth;
   }
 
  /**
-  * Sends a raw HTTP request through the client's pipeline.
+  * Sends a raw HTTP request through the client pipeline.
   *
-  * This is an escape hatch for reaching Payload CMS custom endpoints
-  * or any route not covered by the typed methods. The request still
-  * benefits from the client's base URL, default headers, authentication,
-  * and error handling — but returns raw JSON instead of a DTO.
+  * An escape hatch for `Payload CMS` custom endpoints.
+  * Uses the same headers, auth, and error handling
+  * but returns raw JSON instead of a DTO.
   *
-  * @param options.method - The HTTP method to use.
-  * @param options.path - URL path appended to the base URL (e.g. `/api/custom-endpoint`).
-  * @param options.body - Optional JSON body to send.
-  * @param options.query - Optional QueryBuilder for query parameters.
+  * @param {HttpMethod} options.method - The HTTP method to use.
+  * @param {string} options.path - URL path appended to the base URL (e.g. `/api/custom-endpoint`).
+  * @param {Json} [options.body] - Optional JSON body to send.
+  * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for query parameters.
   *
-  * @returns The parsed JSON response, or `undefined` for empty response bodies.
+  * @returns {Promise<Json | undefined>} The parsed JSON response, or `undefined` for empty bodies.
   */
   async request(options: { method: HttpMethod; path: string; body?: Json; query?: QueryBuilder }): Promise<Json | undefined> {
     const { method, path, body, query } = options;
@@ -114,14 +121,12 @@ export class HttpClient {
  /**
   * Appends a serialized query string to the given URL.
   *
-  * If a {@link QueryBuilder} is provided, its built query parameters
-  * are encoded using the {@link QueryStringEncoder} and appended
-  * to the URL. If no QueryBuilder is provided, the URL is returned
-  * unchanged.
+  * Encodes the {@link QueryBuilder} parameters via
+  * {@link QueryStringEncoder} and appends them.
   *
   * @param {string} url - The base URL to append query parameters to.
-  * @param {QueryBuilder | undefined} queryBuilder - Optional QueryBuilder used to construct query parameters.
-  * 
+  * @param {QueryBuilder | undefined} queryBuilder - Optional query parameters.
+  *
   * @returns {string} The URL with an appended query string, if applicable.
   */
   private _appendQueryString(url: string, queryBuilder?: QueryBuilder): string {
@@ -136,34 +141,19 @@ export class HttpClient {
   }
 
  /**
-  * Executes an HTTP request and returns the parsed JSON response.
+  * Executes an HTTP request and returns parsed JSON.
   *
-  * This method centralizes all fetch-related concerns:
-  * - Header merging and default HTTP method handling
-  * - Safe JSON parsing (including empty response bodies)
-  * - Normalized error handling via {@link PayloadError}
-  *
-  * Behavior:
-  * - If the response body is empty, `undefined` is returned.
-  * - If the response body contains JSON, it is parsed and returned.
-  * - If the response status is non-2xx, a {@link PayloadError} is thrown with:
-  *   - `statusCode` from the response
-  *   - The original `Response` object (when available)
-  *   - The parsed JSON body attached as `cause` (when present)
-  *
-  * Error handling:
-  * - Network, parsing, and abort errors are normalized into descriptive errors.
-  * - Existing {@link PayloadError} instances are rethrown without modification.
-  *
-  * This method does not perform any Payload-specific decoding — callers are
-  * responsible for wrapping the returned JSON into DTOs as appropriate.
+  * Merges default headers, applies auth, parses the
+  * response body, and normalizes errors into
+  * {@link PayloadError} instances.
   *
   * @param {string} url - Fully resolved request URL.
-  * @param {object} config - Optional `fetch` configuration overrides.
-  * 
-  * @returns {Promise<Json | undefined>} Parsed JSON response, or `undefined` for empty responses.
-  * 
-  * @throws PayloadError | Error.
+  * @param {RequestInit} config - Optional `fetch` configuration overrides.
+  *
+  * @returns {Promise<Json | undefined>} Parsed JSON, or `undefined` for empty responses.
+  *
+  * @throws {PayloadError} On non-2xx responses.
+  * @throws {Error} On network, parsing, or abort failures.
   */
   private async _fetch(url: string, config: RequestInit = {}): Promise<Json | undefined> {    
     let response: Response;
@@ -232,12 +222,12 @@ export class HttpClient {
   }
 
   /**
-   * Retrieves a paginated list of documents from a collection.
+   * Retrieves a paginated list of documents from a `collection`.
    *
-   * @param options.slug - The collection slug.
-   * @param options.query - Optional QueryBuilder for filtering, sorting, pagination, etc.
+   * @param {string} options.slug - The `collection` slug.
+   * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering, sorting, pagination.
    *
-   * @returns A paginated response containing matching documents.
+   * @returns {Promise<PaginatedDocsDTO>} A paginated response containing matching documents.
    */
   async find(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
@@ -251,11 +241,11 @@ export class HttpClient {
   /**
    * Retrieves a single document by its ID.
    *
-   * @param options.slug - The collection slug.
-   * @param options.id - The document ID.
-   * @param options.query - Optional QueryBuilder for depth, locale, etc.
+   * @param {string} options.slug - The `collection` slug.
+   * @param {string} options.id - The document ID.
+   * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for depth, locale, etc.
    *
-   * @returns The requested document.
+   * @returns {Promise<DocumentDTO>} The requested document.
    */
   async findById(options: { slug: string; id: string; query?: QueryBuilder }): Promise<DocumentDTO> {
     const { slug, id, query } = options;
@@ -267,13 +257,13 @@ export class HttpClient {
   }
 
   /**
-   * Creates a new document in a collection.
+   * Creates a new document in a `collection`.
    *
-   * @param options.slug - The collection slug.
-   * @param options.data - The document data to create.
-   * @param options.file - Optional file to upload (for upload-enabled collections).
+   * @param {string} options.slug - The `collection` slug.
+   * @param {Json} options.data - The document data to create.
+   * @param {IFileUpload} [options.file] - Optional file for `upload`-enabled collections.
    *
-   * @returns The created document.
+   * @returns {Promise<DocumentDTO>} The created document.
    */
   async create(options: { slug: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
     const { slug, data, file } = options;
@@ -294,10 +284,10 @@ export class HttpClient {
   /**
    * Deletes multiple documents matching a query.
    *
-   * @param options.slug - The collection slug.
-   * @param options.query - QueryBuilder with where clause to select documents.
+   * @param {string} options.slug - The `collection` slug.
+   * @param {QueryBuilder} options.query - {@link QueryBuilder} with `where` clause to select documents.
    *
-   * @returns The bulk operation result containing deleted documents.
+   * @returns {Promise<PaginatedDocsDTO>} The bulk result containing deleted documents.
    */
   async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
@@ -317,10 +307,10 @@ export class HttpClient {
   /**
    * Deletes a single document by its ID.
    *
-   * @param options.slug - The collection slug.
-   * @param options.id - The document ID.
+   * @param {string} options.slug - The `collection` slug.
+   * @param {string} options.id - The document ID.
    *
-   * @returns The deleted document.
+   * @returns {Promise<DocumentDTO>} The deleted document.
    */
   async deleteById(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
@@ -340,12 +330,12 @@ export class HttpClient {
   /**
    * Updates multiple documents matching a query.
    *
-   * @param options.slug - The collection slug.
-   * @param options.data - The fields to update on all matching documents.
-   * @param options.query - QueryBuilder with where clause to select documents.
-   * @param options.file - Optional file to upload (for upload-enabled collections).
+   * @param {string} options.slug - The `collection` slug.
+   * @param {Json} options.data - The fields to update on matching documents.
+   * @param {QueryBuilder} options.query - {@link QueryBuilder} with `where` clause to select documents.
+   * @param {IFileUpload} [options.file] - Optional file for `upload`-enabled collections.
    *
-   * @returns The bulk operation result containing updated documents.
+   * @returns {Promise<PaginatedDocsDTO>} The bulk result containing updated documents.
    */
   async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IFileUpload }): Promise<PaginatedDocsDTO> {
     const { slug, data, query, file } = options;
@@ -366,12 +356,12 @@ export class HttpClient {
   /**
    * Updates a single document by its ID.
    *
-   * @param options.slug - The collection slug.
-   * @param options.id - The document ID.
-   * @param options.data - The fields to update.
-   * @param options.file - Optional file to upload (for upload-enabled collections).
+   * @param {string} options.slug - The `collection` slug.
+   * @param {string} options.id - The document ID.
+   * @param {Json} options.data - The fields to update.
+   * @param {IFileUpload} [options.file] - Optional file for `upload`-enabled collections.
    *
-   * @returns The updated document.
+   * @returns {Promise<DocumentDTO>} The updated document.
    */
   async updateById(options: { slug: string; id: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
     const { slug, id, data, file } = options;
@@ -390,12 +380,12 @@ export class HttpClient {
   }
 
   /**
-   * Retrieves the total count of documents in a collection.
+   * Retrieves the total document count for a `collection`.
    *
-   * @param options.slug - The collection slug.
-   * @param options.query - Optional QueryBuilder for filtering (where clause).
+   * @param {string} options.slug - The `collection` slug.
+   * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering.
    *
-   * @returns The total document count.
+   * @returns {Promise<number>} The total document count.
    */
   async count(options: { slug: string; query?: QueryBuilder }): Promise<number> {
     const { slug, query } = options;
@@ -407,11 +397,11 @@ export class HttpClient {
   }
 
   /**
-   * Retrieves a global document.
+   * Retrieves a `global` document.
    *
-   * @param options.slug - The global slug.
+   * @param {string} options.slug - The `global` slug.
    *
-   * @returns The global document.
+   * @returns {Promise<DocumentDTO>} The `global` document.
    */
   async findGlobal(options: { slug: string }): Promise<DocumentDTO> {
     const { slug } = options;
@@ -423,12 +413,12 @@ export class HttpClient {
   }
 
   /**
-   * Updates a global document.
+   * Updates a `global` document.
    *
-   * @param options.slug - The global slug.
-   * @param options.data - The fields to update.
+   * @param {string} options.slug - The `global` slug.
+   * @param {Json} options.data - The fields to update.
    *
-   * @returns The updated global document.
+   * @returns {Promise<DocumentDTO>} The updated `global` document.
    */
   async updateGlobal(options: { slug: string; data: Json }): Promise<DocumentDTO> {
     const { slug, data } = options;
@@ -447,12 +437,12 @@ export class HttpClient {
   }
 
   /**
-   * Retrieves a paginated list of versions for a collection document.
+   * Retrieves a paginated list of `versions` for a `collection`.
    *
-   * @param options.slug - The collection slug.
-   * @param options.query - Optional QueryBuilder for filtering, sorting, pagination.
+   * @param {string} options.slug - The `collection` slug.
+   * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering, sorting, pagination.
    *
-   * @returns A paginated response containing version documents.
+   * @returns {Promise<PaginatedDocsDTO>} A paginated response containing `version` documents.
    */
   async findVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
@@ -464,12 +454,12 @@ export class HttpClient {
   }
 
   /**
-   * Retrieves a single version document by its ID.
+   * Retrieves a single `version` document by its ID.
    *
-   * @param options.slug - The collection slug.
-   * @param options.id - The version ID.
+   * @param {string} options.slug - The `collection` slug.
+   * @param {string} options.id - The `version` ID.
    *
-   * @returns The version document.
+   * @returns {Promise<DocumentDTO>} The `version` document.
    */
   async findVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
@@ -481,12 +471,12 @@ export class HttpClient {
   }
 
   /**
-   * Restores a collection document to a specific version.
+   * Restores a `collection` document to a specific `version`.
    *
-   * @param options.slug - The collection slug.
-   * @param options.id - The version ID to restore.
+   * @param {string} options.slug - The `collection` slug.
+   * @param {string} options.id - The `version` ID to restore.
    *
-   * @returns The restored document.
+   * @returns {Promise<DocumentDTO>} The restored document.
    */
   async restoreVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
@@ -504,12 +494,12 @@ export class HttpClient {
   }
 
   /**
-   * Retrieves a paginated list of versions for a global document.
+   * Retrieves a paginated list of `versions` for a `global`.
    *
-   * @param options.slug - The global slug.
-   * @param options.query - Optional QueryBuilder for filtering, sorting, pagination.
+   * @param {string} options.slug - The `global` slug.
+   * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering, sorting, pagination.
    *
-   * @returns A paginated response containing version documents.
+   * @returns {Promise<PaginatedDocsDTO>} A paginated response containing `version` documents.
    */
   async findGlobalVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
@@ -521,12 +511,12 @@ export class HttpClient {
   }
 
   /**
-   * Retrieves a single global version document by its ID.
+   * Retrieves a single `global` `version` document by its ID.
    *
-   * @param options.slug - The global slug.
-   * @param options.id - The version ID.
+   * @param {string} options.slug - The `global` slug.
+   * @param {string} options.id - The `version` ID.
    *
-   * @returns The version document.
+   * @returns {Promise<DocumentDTO>} The `version` document.
    */
   async findGlobalVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
@@ -538,12 +528,12 @@ export class HttpClient {
   }
 
   /**
-   * Restores a global document to a specific version.
+   * Restores a `global` document to a specific `version`.
    *
-   * @param options.slug - The global slug.
-   * @param options.id - The version ID to restore.
+   * @param {string} options.slug - The `global` slug.
+   * @param {string} options.id - The `version` ID to restore.
    *
-   * @returns The restored document.
+   * @returns {Promise<DocumentDTO>} The restored document.
    */
   async restoreGlobalVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
@@ -563,10 +553,10 @@ export class HttpClient {
   /**
    * Authenticates a user and returns a JWT token.
    *
-   * @param options.slug - The auth-enabled collection slug.
-   * @param options.data - The login credentials (e.g. `{ email, password }`).
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {Json} options.data - The login credentials (e.g. `{ email, password }`).
    *
-   * @returns The login result containing token, expiration, and user document.
+   * @returns {Promise<LoginResultDTO>} The login result containing token, expiration, and user.
    */
   async login(options: { slug: string; data: Json }): Promise<LoginResultDTO> {
     const { slug, data } = options;
@@ -587,9 +577,9 @@ export class HttpClient {
   /**
    * Retrieves the currently authenticated user.
    *
-   * @param options.slug - The auth-enabled collection slug.
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
    *
-   * @returns The current user with optional token and session metadata.
+   * @returns {Promise<MeResultDTO>} The current user with token and session metadata.
    */
   async me(options: { slug: string }): Promise<MeResultDTO> {
     const { slug } = options;
@@ -603,9 +593,9 @@ export class HttpClient {
   /**
    * Refreshes the current JWT token.
    *
-   * @param options.slug - The auth-enabled collection slug.
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
    *
-   * @returns The refresh result containing the new token, expiration, and user document.
+   * @returns {Promise<RefreshResultDTO>} The new token, expiration, and user.
    */
   async refreshToken(options: { slug: string }): Promise<RefreshResultDTO> {
     const { slug } = options;
@@ -625,10 +615,10 @@ export class HttpClient {
   /**
    * Initiates the forgot-password flow.
    *
-   * @param options.slug - The auth-enabled collection slug.
-   * @param options.data - The request data (e.g. `{ email }`).
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {Json} options.data - The request data (e.g. `{ email }`).
    *
-   * @returns A message confirming the request was processed.
+   * @returns {Promise<MessageDTO>} A message confirming the request was processed.
    */
   async forgotPassword(options: { slug: string; data: Json }): Promise<MessageDTO> {
     const { slug, data } = options;
@@ -649,10 +639,10 @@ export class HttpClient {
   /**
    * Completes a password reset using a reset token.
    *
-   * @param options.slug - The auth-enabled collection slug.
-   * @param options.data - The reset data (e.g. `{ token, password }`).
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {Json} options.data - The reset data (e.g. `{ token, password }`).
    *
-   * @returns The result containing the user document and optional new token.
+   * @returns {Promise<ResetPasswordResultDTO>} The user document and optional new token.
    */
   async resetPassword(options: { slug: string; data: Json }): Promise<ResetPasswordResultDTO> {
     const { slug, data } = options;
@@ -673,10 +663,10 @@ export class HttpClient {
   /**
    * Verifies a user's email address using a verification token.
    *
-   * @param options.slug - The auth-enabled collection slug.
-   * @param options.token - The email verification token.
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {string} options.token - The email verification token.
    *
-   * @returns A message confirming the verification result.
+   * @returns {Promise<MessageDTO>} A message confirming the verification result.
    */
   async verifyEmail(options: { slug: string; token: string }): Promise<MessageDTO> {
     const { slug, token } = options;

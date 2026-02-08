@@ -1,19 +1,11 @@
 /**
- * PayloadError
+ * A structured error thrown on failed Payload CMS requests.
  *
- * A structured error type representing a failed request to a Payload CMS API.
+ * Captures the HTTP status code, the originating `Response`,
+ * and an optional cause (e.g. parsed JSON error payload).
  *
- * This error normalizes all failure-related information at construction time
- * so downstream consumers can rely on consistent, invariant state.
- *
- * Responsibilities:
- * - Capture the HTTP status code associated with the failure
- * - Preserve the originating `Response` when available
- * - Provide a meaningful default error message
- * - Safely attach an underlying cause (e.g. parsed JSON error payload)
- *
- * This type is thrown by the HttpClient when a Payload API request fails
- * with a non-2xx response or encounters a fatal transport / parsing error.
+ * Thrown by {@link HttpClient} on non-2xx responses or
+ * fatal transport / parsing errors.
  */
 export class PayloadError extends Error {
   public readonly statusCode: number;

@@ -2,13 +2,10 @@ import type { IFileUpload } from "../contracts/IFileUpload.js";
 import type { Json } from "../../types/Json.js";
 
 /**
- * FormDataBuilder
- *
  * Constructs a `FormData` body for file upload requests.
  *
- * Payload CMS expects two fields:
- * - `file`: The file content as a Blob
- * - `_payload`: The document data as a JSON string
+ * Payload CMS expects `file` (Blob) and `_payload`
+ * (JSON string) fields.
  */
 export class FormDataBuilder {
   /**
@@ -22,9 +19,7 @@ export class FormDataBuilder {
   static build(file: IFileUpload, data: Json): FormData {
     const formData = new FormData();
 
-    const blob = (file.mimeType !== undefined)
-      ? new Blob([file.content], { type: file.mimeType })
-      : file.content;
+    const blob = (file.mimeType !== undefined) ? new Blob([file.content], { type: file.mimeType }) : file.content;
 
     formData.append('file', blob, file.filename);
     formData.append('_payload', JSON.stringify(data));

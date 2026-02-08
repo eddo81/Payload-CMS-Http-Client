@@ -1,11 +1,7 @@
 import type { Json } from "../../types/Json.js";
 
 /**
- * TotalDocsDTO
- *
- * A data transfer object representing the total document count 
- * for a collection in Payload CMS.
- *
+ * Represents a total document count from a Payload CMS `collection`.
  */
 export class TotalDocsDTO {
   totalDocs: number = 0;

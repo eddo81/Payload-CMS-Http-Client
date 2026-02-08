@@ -5,22 +5,10 @@ import type { Operator } from "./types/Operator.js";
 import type { Json, JsonValue } from "./types/Json.js";
 
 /**
- * JoinBuilder
+ * Collects and composes `Join Field` query operations.
  *
- * Collects and composes join-specific query operations for Payload CMS.
- *
- * This builder is scoped to the `joins` query parameter and is invoked
- * exclusively via `QueryBuilder.join(...)`.
- *
- * Design principles:
- * - Collects join operations internally without mutating **QueryParametersDTO**
- * - Supports idempotent updates per join target (last write wins)
- * - Final query shape is produced only in `build()`
- * - May return `undefined` (no joins) or a joins object
- * - Exposes `isDisabled` for callers to check the disabled state separately
- *
- * The internal representation is intentionally decoupled from the final
- * Payload query shape. Mapping to `{ joins: ... }` occurs at build time.
+ * Scoped to the `joins` query parameter and invoked
+ * via {@link QueryBuilder.join}.
  */
 export class JoinBuilder {
   private readonly _clauses: JoinClause[] = [];
@@ -54,19 +42,12 @@ export class JoinBuilder {
   }
 
  /**
-  * Limit the number of results to be returned, default is 10.
+  * Limits the number of joined documents returned.
   *
-  * @param {string} on - The `Join Field` name (e.g. "relatedPosts") to join on.
-  * @param {number} value - Maximum number of related documents to return.
+  * @param {string} on - The `Join Field` name.
+  * @param {number} value - Maximum document count (default 10).
   *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.limit('posts', 1);
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   limit(on: string, value: number): this {
     const clause = this._getOrCreateClause(on);
@@ -79,23 +60,12 @@ export class JoinBuilder {
   }
 
  /**
-  * Sets the page of related documents to retrieve for a join.
+  * Sets the page of joined documents to retrieve (1-based).
   *
-  * Used together with `limit()` to paginate related documents.
-  * Pagination is scoped to the joined relation only and does not
-  * affect the root query.
+  * @param {string} on - The `Join Field` name.
+  * @param {number} page - The page number.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {number} page - The page number (1-based).
-  *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.page('posts', 2);
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   page(on: string, page: number): this {
     const clause = this._getOrCreateClause(on);
@@ -108,19 +78,12 @@ export class JoinBuilder {
   }
 
  /**
-  * Sort results in ascending order by the specified field.
+  * Sorts joined documents ascending by the given field.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {string} field - The field to sort by.
+  * @param {string} on - The `Join Field` name.
+  * @param {string} field - The field name to sort by.
   *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.sort('posts', 'title');
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   sort(on: string, field: string): this {
     if (field === '') {
@@ -137,19 +100,14 @@ export class JoinBuilder {
   }
 
  /**
-  * Sort results in descending order by the specified field.
+  * Sorts joined documents descending by the given field.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {string} field - The field to sort by in descending order.
+  * Automatically prefixes the field with `-` if needed.
   *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.sortByDescending('posts', 'title');
-  *   });
+  * @param {string} on - The `Join Field` name.
+  * @param {string} field - The field name to sort by.
   *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   sortByDescending(on: string, field: string): this {
     const _field = field.startsWith('-') ? field : `-${field}`;
@@ -158,19 +116,12 @@ export class JoinBuilder {
   }
 
  /**
-  * Determines whether the count of related documents are include or not.
+  * Toggles the count of joined documents in the response.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {boolean} value - Whether to include the count of related documents.
+  * @param {string} on - The `Join Field` name.
+  * @param {boolean} value - Whether to include the count.
   *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.count('posts', true);
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   count(on: string, value: boolean = true): this {
     const clause = this._getOrCreateClause(on);
@@ -183,27 +134,17 @@ export class JoinBuilder {
   }
 
  /**
-  * Adds a where condition scoped to a specific join.
+  * Adds a `where` condition scoped to a `Join Field`.
   *
-  * Multiple calls to `where()` for the same join field will accumulate
-  * conditions via the internal `WhereBuilderRegistry`. Use `and()` or
-  * `or()` for explicit grouping of conditions.
+  * Multiple calls for the same join accumulate via
+  * the internal {@link WhereBuilderRegistry}.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
+  * @param {string} on - The `Join Field` name.
   * @param {string} field - The field to compare.
-  * @param {Operator} operator - The comparison operator (e.g., 'equals', 'not_equals', 'in', etc.).
-  * @param {JsonValue} value - The value to compare the field against.
+  * @param {Operator} operator - The comparison operator.
+  * @param {JsonValue} value - The value to compare against.
   *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder
-  *       .where('posts', 'status', 'equals', 'published')
-  *       .where('posts', 'author', 'equals', 'Alice');
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   where(on: string, field: string, operator: Operator, value: JsonValue): this {
     const builder = this._registry.get(on);
@@ -220,25 +161,12 @@ export class JoinBuilder {
   }
 
  /**
-  * Adds a nested `AND` group of conditions scoped to a specific join.
+  * Adds a nested `AND` group scoped to a `Join Field`.
   *
-  * Use this to group multiple conditions that must all be true.
+  * @param {string} on - The `Join Field` name.
+  * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {Function} callback - Callback function receiving a WhereBuilder for nested conditions.
-  *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.and('posts', group => {
-  *       group
-  *         .where('status', 'equals', 'published')
-  *         .where('author', 'equals', 'Alice');
-  *     });
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   and(on: string, callback: (builder: WhereBuilder) => void): this {
     const builder = this._registry.get(on);
@@ -255,25 +183,12 @@ export class JoinBuilder {
   }
 
  /**
-  * Adds a nested `OR` group of conditions scoped to a specific join.
+  * Adds a nested `OR` group scoped to a `Join Field`.
   *
-  * Use this to group multiple conditions where at least one must be true.
+  * @param {string} on - The `Join Field` name.
+  * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
-  * @param {Function} callback - Callback function receiving a WhereBuilder for nested conditions.
-  *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.or('posts', group => {
-  *       group
-  *         .where('author', 'equals', 'Alice')
-  *         .where('author', 'equals', 'Bob');
-  *     });
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   or(on: string, callback: (builder: WhereBuilder) => void): this {
     const builder = this._registry.get(on);
@@ -300,20 +215,12 @@ export class JoinBuilder {
   }
 
  /**
-  * Disables all `Join Fields` from returning for the query.
+  * Disables all `Join Fields` for the query.
   *
-  * When disabled, callers should check `isDisabled` and set
-  * `joins=false` in the query string. Any previously collected
-  * join clauses are discarded by the caller.
+  * Sets `joins=false` in the query string, overriding
+  * any previously configured join clauses.
   *
-  * @example
-  * const query = new QueryBuilder();
-  * query
-  *   .join(joinBuilder => {
-  *     joinBuilder.disable();
-  *   });
-  *
-  * @returns {JoinBuilder} The current JoinBuilder instance for further chaining.
+  * @returns {this} The current builder for chaining.
   */
   disable(): this {
     this._disabled = true;
@@ -322,11 +229,9 @@ export class JoinBuilder {
   }
 
  /**
-  * Builds the joins object for the query.
+  * Builds the `joins` query parameter object.
   *
-  * @returns {Json | undefined}
-  * - `undefined` if no join operations were added
-  * - A joins object compatible with Payload's REST API otherwise
+  * @returns {Json | undefined} The joins object, or `undefined` if empty.
   */
   build(): Json | undefined {
     if (this._clauses.length === 0) {
