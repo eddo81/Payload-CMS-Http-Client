@@ -84,6 +84,34 @@ export class HttpClient {
   }
 
  /**
+  * Sends a raw HTTP request through the client's pipeline.
+  *
+  * This is an escape hatch for reaching Payload CMS custom endpoints
+  * or any route not covered by the typed methods. The request still
+  * benefits from the client's base URL, default headers, authentication,
+  * and error handling — but returns raw JSON instead of a DTO.
+  *
+  * @param options.method - The HTTP method to use.
+  * @param options.path - URL path appended to the base URL (e.g. `/api/custom-endpoint`).
+  * @param options.body - Optional JSON body to send.
+  * @param options.query - Optional QueryBuilder for query parameters.
+  *
+  * @returns The parsed JSON response, or `undefined` for empty response bodies.
+  */
+  async request(options: { method: HttpMethod; path: string; body?: Json; query?: QueryBuilder }): Promise<Json | undefined> {
+    const { method, path, body, query } = options;
+    const url = this._appendQueryString(`${this._baseUrl}${path}`, query);
+
+    const config: RequestInit = { method };
+
+    if (body !== undefined) {
+      config.body = JSON.stringify(body);
+    }
+
+    return this._fetch(url, config);
+  }
+
+ /**
   * Appends a serialized query string to the given URL.
   *
   * If a {@link QueryBuilder} is provided, its built query parameters

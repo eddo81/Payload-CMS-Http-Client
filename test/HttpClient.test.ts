@@ -504,6 +504,46 @@ harness.add('deleteById() should delete the test media document', async () => {
   TestHarness.assertEqual(result.id, createdMediaId);
 });
 
+// ── Request Escape Hatch Tests ─────────────────────────────────
+
+harness.add('request() GET should return raw JSON', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.request({
+    method: 'GET',
+    path: '/api/posts',
+  });
+
+  TestHarness.assertTrue(result !== undefined);
+  TestHarness.assertTrue(Array.isArray(result!['docs']));
+});
+
+harness.add('request() POST with body should create and return raw JSON', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.request({
+    method: 'POST',
+    path: '/api/posts',
+    body: { title: 'Test Post (request)' },
+  });
+
+  TestHarness.assertTrue(result !== undefined);
+  TestHarness.assertTrue((result!['doc'] as Record<string, unknown>)['id'] !== '');
+});
+
+harness.add('request() GET with query should append query string', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.request({
+    method: 'GET',
+    path: '/api/posts',
+    query: new lib.QueryBuilder().where('title', 'contains', 'request'),
+  });
+
+  TestHarness.assertTrue(result !== undefined);
+  TestHarness.assertTrue(Array.isArray(result!['docs']));
+});
+
 // ── Cleanup ────────────────────────────────────────────────────
 
 harness.add('cleanup: delete the test post', async () => {
