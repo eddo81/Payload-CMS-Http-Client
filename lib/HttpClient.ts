@@ -11,6 +11,9 @@ import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
 import type { IAuthCredential } from "./internal/contracts/IAuthCredential.js";
 import type { Json } from "./types/Json";
+import type { IFileUpload } from "./internal/contracts/IFileUpload.js";
+import { FormDataBuilder } from "./internal/upload/FormDataBuilder.js";
+import { HttpMethod } from "./types/HttpMethod.js";
 
 export class HttpClient {
   private _baseUrl: string;
@@ -19,12 +22,7 @@ export class HttpClient {
   private _encoder: QueryStringEncoder = new QueryStringEncoder();
 
   constructor(options: { baseUrl: string; headers?: Record<string, string>; auth?: IAuthCredential }) {
-    try {
-      this._baseUrl = new URL(options.baseUrl).toString();
-    }
-    catch (error) {
-      throw new Error(`[PayloadError] Invalid base URL: ${options.baseUrl}`, { cause: error });
-    }
+    this._baseUrl = this._normalizeUrl(options.baseUrl);
 
     if(options.headers !== undefined) {
       this.setHeaders(options.headers);
@@ -32,6 +30,31 @@ export class HttpClient {
     
     if(options.auth !== undefined) {
       this.setAuth(options.auth);
+    }
+  }
+
+ /**
+  * Validates and normalizes a base URL string.
+  *
+  * Uses the `URL` constructor to reject malformed URLs, then strips
+  * any trailing slashes to prevent double-slash paths when building
+  * endpoint URLs (e.g. `baseUrl + "/api/..."` ).
+  *
+  * @param {string} url - The raw base URL to normalize.
+  *
+  * @returns {string} The normalized URL without a trailing slash.
+  *
+  * @throws Error if the URL is malformed.
+  */
+  private _normalizeUrl(url: string): string {
+    try {
+      const urlString = new URL(url).toString();
+      const normalized = urlString.replace(/\/+$/, '');
+
+      return normalized;
+    }
+    catch (error) {
+      throw new Error(`[PayloadError] Invalid base URL: ${url}`, { cause: error });
     }
   }
 
@@ -118,12 +141,17 @@ export class HttpClient {
     let response: Response;
     let text: string;
     let json: Json | undefined = undefined;
+    let defaultMethod: HttpMethod = 'GET';
 
-    let headers = {
+    let headers: Record<string, string> = {
       Accept: "application/json",
       "Content-Type": "application/json",
       ...this._headers,
     };
+
+    if (config.body instanceof FormData) {
+      delete headers["Content-Type"];
+    }
 
     if (this._auth) {
       this._auth.applyTo(headers);
@@ -131,7 +159,7 @@ export class HttpClient {
 
     try {
       response = await fetch(url, {
-        method: 'GET',
+        method: defaultMethod,
         ...config,
         headers: headers,
       });
@@ -215,16 +243,18 @@ export class HttpClient {
    *
    * @param options.slug - The collection slug.
    * @param options.data - The document data to create.
+   * @param options.file - Optional file to upload (for upload-enabled collections).
    *
    * @returns The created document.
    */
-  async create(options: { slug: string; data: Json }): Promise<DocumentDTO> {
-    const { slug, data } = options;
+  async create(options: { slug: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
+    const { slug, data, file } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}`;
+    const method: HttpMethod = 'POST';
 
     const config: RequestInit = {
-      method: 'POST',
-      body: JSON.stringify(data),
+      method: method,
+      body: file !== undefined ? FormDataBuilder.build(file, data) : JSON.stringify(data),
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -244,9 +274,10 @@ export class HttpClient {
   async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
     const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
+    const method: HttpMethod = 'DELETE';
 
     const config: RequestInit = {
-      method: 'DELETE',
+      method: method,
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -266,9 +297,10 @@ export class HttpClient {
   async deleteById(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
+    const method: HttpMethod = 'DELETE';
 
     const config: RequestInit = {
-      method: 'DELETE',
+      method: method,
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -283,16 +315,18 @@ export class HttpClient {
    * @param options.slug - The collection slug.
    * @param options.data - The fields to update on all matching documents.
    * @param options.query - QueryBuilder with where clause to select documents.
+   * @param options.file - Optional file to upload (for upload-enabled collections).
    *
    * @returns The bulk operation result containing updated documents.
    */
-  async update(options: { slug: string; data: Json; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
-    const { slug, data, query } = options;
+  async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IFileUpload }): Promise<PaginatedDocsDTO> {
+    const { slug, data, query, file } = options;
     const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
+    const method: HttpMethod = 'PATCH';
 
     const config: RequestInit = {
-      method: 'PATCH',
-      body: JSON.stringify(data),
+      method: method,
+      body: file !== undefined ? FormDataBuilder.build(file, data) : JSON.stringify(data),
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -307,16 +341,18 @@ export class HttpClient {
    * @param options.slug - The collection slug.
    * @param options.id - The document ID.
    * @param options.data - The fields to update.
+   * @param options.file - Optional file to upload (for upload-enabled collections).
    *
    * @returns The updated document.
    */
-  async updateById(options: { slug: string; id: string; data: Json }): Promise<DocumentDTO> {
-    const { slug, id, data } = options;
+  async updateById(options: { slug: string; id: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
+    const { slug, id, data, file } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
+    const method: HttpMethod = 'PATCH';
 
     const config: RequestInit = {
-      method: 'PATCH',
-      body: JSON.stringify(data),
+      method: method,
+      body: file !== undefined ? FormDataBuilder.build(file, data) : JSON.stringify(data),
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -369,9 +405,10 @@ export class HttpClient {
   async updateGlobal(options: { slug: string; data: Json }): Promise<DocumentDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
+    const method: HttpMethod = 'POST';
 
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
       body: JSON.stringify(data),
     };
 
@@ -426,9 +463,10 @@ export class HttpClient {
   async restoreVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-
+    const method: HttpMethod = 'POST'; 
+    
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -482,9 +520,10 @@ export class HttpClient {
   async restoreGlobalVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-
+    const method: HttpMethod = 'POST';
+    
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -504,9 +543,10 @@ export class HttpClient {
   async login(options: { slug: string; data: Json }): Promise<LoginResultDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/login`;
+    const method: HttpMethod = 'POST';
 
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
       body: JSON.stringify(data),
     };
 
@@ -542,9 +582,10 @@ export class HttpClient {
   async refreshToken(options: { slug: string }): Promise<RefreshResultDTO> {
     const { slug } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/refresh-token`;
+    const method: HttpMethod = 'POST';
 
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
     };
 
     const json = await this._fetch(url, config) ?? {};
@@ -564,9 +605,10 @@ export class HttpClient {
   async forgotPassword(options: { slug: string; data: Json }): Promise<MessageDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/forgot-password`;
+    const method: HttpMethod = 'POST';
 
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
       body: JSON.stringify(data),
     };
 
@@ -587,9 +629,10 @@ export class HttpClient {
   async resetPassword(options: { slug: string; data: Json }): Promise<ResetPasswordResultDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/reset-password`;
+    const method: HttpMethod = 'POST';
 
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
       body: JSON.stringify(data),
     };
 
@@ -610,9 +653,10 @@ export class HttpClient {
   async verifyEmail(options: { slug: string; token: string }): Promise<MessageDTO> {
     const { slug, token } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/verify/${encodeURIComponent(token)}`;
+    const method: HttpMethod = 'POST';
 
     const config: RequestInit = {
-      method: 'POST',
+      method: method,
     };
 
     const json = await this._fetch(url, config) ?? {};

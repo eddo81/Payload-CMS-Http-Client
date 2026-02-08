@@ -6,9 +6,11 @@ const harness = new TestHarness();
 const BASE_URL = 'http://localhost:3000/';
 const TEST_EMAIL = 'claude@outlook.com';
 const TEST_PASSWORD = '123456789';
+const TEST_API_KEY = '96d1c330-f9eb-4a30-89c3-be1c180c16d6';
 
 // Shared state across sequential tests
 let createdPostId: string = '';
+let createdMediaId: string = '';
 let versionId: string = '';
 let loginToken: string = '';
 
@@ -62,6 +64,45 @@ harness.add('count() should return the correct document count', async () => {
 
   TestHarness.assertTrue(total >= 1);
 });
+
+// ── QueryBuilder Integration Tests ──────────────────────────────
+
+harness.add('find() with limit should constrain returned documents', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.find({
+    slug: 'posts',
+    query: new lib.QueryBuilder().limit(1),
+  });
+
+  TestHarness.assertEqual(result.limit, 1);
+  TestHarness.assertTrue(result.docs.length <= 1);
+});
+
+harness.add('find() with page should return the specified page', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.find({
+    slug: 'posts',
+    query: new lib.QueryBuilder().limit(1).page(1),
+  });
+
+  TestHarness.assertEqual(result.page, 1);
+  TestHarness.assertEqual(result.limit, 1);
+});
+
+harness.add('find() with sort should accept sort parameter', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.find({
+    slug: 'posts',
+    query: new lib.QueryBuilder().sortByDescending('createdAt'),
+  });
+
+  TestHarness.assertTrue(result.docs.length >= 1);
+});
+
+// ── CRUD Tests (continued) ──────────────────────────────────────
 
 harness.add('updateById() should update a single post', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
@@ -240,6 +281,48 @@ harness.add('forgotPassword() should return a message', async () => {
   TestHarness.assertTrue(result.message !== '');
 });
 
+harness.add('me() without auth should return an empty user', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.me({ slug: 'users' });
+
+  // Payload returns 200 with { user: null } when unauthenticated
+  TestHarness.assertEqual(result.user.id, '');
+});
+
+harness.add('refreshToken() without auth should throw PayloadError', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  let caught: lib.PayloadError | undefined;
+
+  try {
+    await client.refreshToken({ slug: 'users' });
+  } catch (error) {
+    if (error instanceof lib.PayloadError) {
+      caught = error;
+    }
+  }
+
+  TestHarness.assertTrue(caught !== undefined);
+  TestHarness.assertTrue(caught!.statusCode >= 400);
+});
+
+harness.add('setAuth() should enable auth after construction', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  // Without auth, me() returns an empty user
+  const before = await client.me({ slug: 'users' });
+  TestHarness.assertEqual(before.user.id, '');
+
+  // After setting auth, me() returns the authenticated user
+  client.setAuth(new lib.JwtAuth(loginToken));
+  const after = await client.me({ slug: 'users' });
+
+  TestHarness.assertTrue(after.user.id !== '');
+  TestHarness.assertEqual(after.user.json['email'], TEST_EMAIL);
+});
+
+// ── Error Path Tests ────────────────────────────────────────────
+
 harness.add('login() with invalid credentials should throw PayloadError', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
   let threw = false;
@@ -257,9 +340,173 @@ harness.add('login() with invalid credentials should throw PayloadError', async 
   TestHarness.assertTrue(threw);
 });
 
-// ── Cleanup: delete test posts ─────────────────────────────────
+harness.add('findById() with non-existent ID should throw PayloadError', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  let caught: lib.PayloadError | undefined;
 
-harness.add('deleteById() should delete the test post', async () => {
+  try {
+    await client.findById({ slug: 'posts', id: '000000000000000000000000' });
+  } catch (error) {
+    if (error instanceof lib.PayloadError) {
+      caught = error;
+    }
+  }
+
+  TestHarness.assertTrue(caught !== undefined);
+});
+
+harness.add('updateById() with non-existent ID should throw PayloadError', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  let caught: lib.PayloadError | undefined;
+
+  try {
+    await client.updateById({ slug: 'posts', id: '000000000000000000000000', data: { title: 'x' } });
+  } catch (error) {
+    if (error instanceof lib.PayloadError) {
+      caught = error;
+    }
+  }
+
+  TestHarness.assertTrue(caught !== undefined);
+});
+
+harness.add('deleteById() with non-existent ID should throw PayloadError', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  let caught: lib.PayloadError | undefined;
+
+  try {
+    await client.deleteById({ slug: 'posts', id: '000000000000000000000000' });
+  } catch (error) {
+    if (error instanceof lib.PayloadError) {
+      caught = error;
+    }
+  }
+
+  TestHarness.assertTrue(caught !== undefined);
+});
+
+harness.add('PayloadError should expose statusCode and cause from failed request', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  let caught: lib.PayloadError | undefined;
+
+  try {
+    await client.login({
+      slug: 'users',
+      data: { email: 'nobody@example.com', password: 'wrong' },
+    });
+  } catch (error) {
+    if (error instanceof lib.PayloadError) {
+      caught = error;
+    }
+  }
+
+  TestHarness.assertTrue(caught !== undefined);
+  TestHarness.assertTrue(caught!.statusCode >= 400);
+  TestHarness.assertTrue(caught!.cause !== undefined);
+});
+
+// ── ApiKeyAuth Tests ────────────────────────────────────────────
+
+harness.add('ApiKeyAuth should authenticate and allow creating a post', async () => {
+  const client = new lib.HttpClient({
+    baseUrl: BASE_URL,
+    auth: new lib.ApiKeyAuth('users', TEST_API_KEY),
+  });
+
+  const result = await client.create({
+    slug: 'posts',
+    data: { title: 'ApiKey Test Post', content: 'Created with API key auth' },
+  });
+
+  TestHarness.assertTrue(result.id !== '');
+  TestHarness.assertEqual(result.json['title'], 'ApiKey Test Post');
+});
+
+harness.add('ApiKeyAuth should authenticate and allow reading via me()', async () => {
+  const client = new lib.HttpClient({
+    baseUrl: BASE_URL,
+    auth: new lib.ApiKeyAuth('users', TEST_API_KEY),
+  });
+
+  const result = await client.me({ slug: 'users' });
+
+  TestHarness.assertTrue(result.user.id !== '');
+  TestHarness.assertEqual(result.user.json['email'], TEST_EMAIL);
+});
+
+// ── File Upload Tests (media) ──────────────────────────────────
+
+harness.add('create() with file should upload and return DocumentDTO', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  // 1x1 red PNG (68 bytes)
+  const pngBytes = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xde, 0x00, 0x00, 0x00,
+    0x0c, 0x49, 0x44, 0x41, 0x54, 0x08, 0xd7, 0x63, 0xf8, 0xcf, 0xc0, 0x00,
+    0x00, 0x00, 0x02, 0x00, 0x01, 0xe2, 0x21, 0xbc, 0x33, 0x00, 0x00, 0x00,
+    0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+  ]);
+
+  const result = await client.create({
+    slug: 'media',
+    data: { alt: 'test image' },
+    file: new lib.FileUpload({
+      content: new Blob([pngBytes]),
+      filename: 'test-upload.png',
+      mimeType: 'image/png',
+    }),
+  });
+
+  TestHarness.assertTrue(result.id !== '');
+  TestHarness.assertTrue((result.json['filename'] as string).startsWith('test-upload'));
+  TestHarness.assertEqual(result.json['mimeType'], 'image/png');
+  TestHarness.assertEqual(result.json['alt'], 'test image');
+
+  createdMediaId = result.id;
+});
+
+harness.add('updateById() with file should replace the file on a media document', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  // Different 1x1 PNG (blue pixel)
+  const pngBytes = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xde, 0x00, 0x00, 0x00,
+    0x0c, 0x49, 0x44, 0x41, 0x54, 0x08, 0xd7, 0x63, 0xf8, 0xcf, 0xc0, 0x00,
+    0x00, 0x00, 0x02, 0x00, 0x01, 0xe2, 0x21, 0xbc, 0x33, 0x00, 0x00, 0x00,
+    0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+  ]);
+
+  const result = await client.updateById({
+    slug: 'media',
+    id: createdMediaId,
+    data: { alt: 'updated image' },
+    file: new lib.FileUpload({
+      content: new Blob([pngBytes]),
+      filename: 'updated-upload.png',
+      mimeType: 'image/png',
+    }),
+  });
+
+  TestHarness.assertEqual(result.id, createdMediaId);
+  TestHarness.assertTrue((result.json['filename'] as string).startsWith('updated-upload'));
+  TestHarness.assertEqual(result.json['alt'], 'updated image');
+});
+
+harness.add('deleteById() should delete the test media document', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.deleteById({ slug: 'media', id: createdMediaId });
+
+  TestHarness.assertEqual(result.id, createdMediaId);
+});
+
+// ── Cleanup ────────────────────────────────────────────────────
+
+harness.add('cleanup: delete the test post', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
 
   const result = await client.deleteById({ slug: 'posts', id: createdPostId });
@@ -267,12 +514,23 @@ harness.add('deleteById() should delete the test post', async () => {
   TestHarness.assertEqual(result.id, createdPostId);
 });
 
-harness.add('delete() bulk should clean up any remaining test posts', async () => {
+harness.add('cleanup: delete any remaining test posts', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
 
   const result = await client.delete({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('title', 'contains', 'Integration Test'),
+    query: new lib.QueryBuilder().where('title', 'contains', 'Test Post'),
+  });
+
+  TestHarness.assertTrue(Array.isArray(result.docs));
+});
+
+harness.add('cleanup: delete any remaining test media', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.delete({
+    slug: 'media',
+    query: new lib.QueryBuilder().where('filename', 'contains', 'upload'),
   });
 
   TestHarness.assertTrue(Array.isArray(result.docs));

@@ -158,9 +158,9 @@ The following TypeScript constructs have direct equivalents in C# and Dart and r
 - [x] Implement `update()` method (bulk)
 - [x] Implement `deleteById()` method
 - [x] Implement `delete()` method (bulk)
-- [ ] Add file upload support to `create()` (see notes below)
-- [ ] Consider `disableErrors` option for `findById()`
-- [ ] Integration test write operations with `ApiKeyAuth`
+- [x] Add file upload support to `create()`, `updateById()`, and `update()` via `FilePayload` interface
+- [x] ~~Consider `disableErrors` option for `findById()`~~ — Declined: 404 is correct error semantics; consumers already use try/catch for all error types
+- [x] Integration test write operations with `ApiKeyAuth`
 
 **Tier 2 - Globals**
 - [x] Implement `findGlobal()` method
@@ -193,10 +193,12 @@ The following TypeScript constructs have direct equivalents in C# and Dart and r
 Now that Tiers 1–4 are implemented, the following should be tackled in order:
 
 ### 1. Integration Testing
-- [ ] Formalize integration tests covering all HttpClient methods against a running Payload instance
-- [ ] Test auth flow end-to-end: login → use token → me → refreshToken
-- [ ] Test write operations with `ApiKeyAuth` and `JwtAuth`
-- [ ] Test error paths (invalid credentials, expired tokens, 403/404 responses)
+- [x] Formalize integration tests covering all HttpClient methods against a running Payload instance
+- [x] Test auth flow end-to-end: login → use token → me → refreshToken
+- [x] Test write operations with `JwtAuth` (setAuth lifecycle test)
+- [x] Test write operations with `ApiKeyAuth`
+- [x] Test error paths (invalid credentials, non-existent IDs, unauthenticated access, PayloadError properties)
+- [x] Test QueryBuilder integration (limit, page, sort against live API)
 
 ### 2. Refinement & Simplification
 - [x] Review all methods for opportunities to reduce duplication or simplify

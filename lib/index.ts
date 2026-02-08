@@ -15,3 +15,4 @@ export * from './models/auth/ResetPasswordResultDTO.js';
 export * from './models/auth/MessageDTO.js';
 export * from './types/Json.js';
 export * from './types/Operator.js';
+export * from './upload/FileUpload.js';
