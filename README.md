@@ -427,6 +427,22 @@ Verifies a user's email address.
 async verifyEmail(options: { slug: string; token: string }): Promise<MessageDTO>
 ```
 
+##### logout
+
+Logs out the currently authenticated user.
+
+```typescript
+async logout(options: { slug: string }): Promise<MessageDTO>
+```
+
+##### unlock
+
+Unlocks a user account that has been locked due to failed login attempts.
+
+```typescript
+async unlock(options: { slug: string; data: Json }): Promise<MessageDTO>
+```
+
 ---
 
 ### QueryBuilder
@@ -654,7 +670,7 @@ Returned by `resetPassword()`.
 
 #### MessageDTO
 
-Returned by `forgotPassword()` and `verifyEmail()`.
+Returned by `forgotPassword()`, `verifyEmail()`, `logout()`, and `unlock()`.
 
 | Property | Type | Description |
 |----------|------|-------------|

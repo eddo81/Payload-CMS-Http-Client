@@ -1,6 +1,5 @@
 import { JoinClause } from "../internal/JoinClause.js";
 import { WhereBuilder } from "./WhereBuilder.js";
-import { WhereBuilderRegistry } from "../internal/WhereBuilderRegistry.js";
 import type { Operator } from "./types/Operator.js";
 import type { Json, JsonValue } from "./types/Json.js";
 
@@ -12,7 +11,7 @@ import type { Json, JsonValue } from "./types/Json.js";
  */
 export class JoinBuilder {
   private readonly _clauses: JoinClause[] = [];
-  private readonly _registry: WhereBuilderRegistry = new WhereBuilderRegistry();
+  private readonly _whereBuilders: Map<string, WhereBuilder> = new Map();
   private _disabled = false;
 
   /**
@@ -29,7 +28,7 @@ export class JoinBuilder {
       return undefined;
     }
 
-    let clause = this._clauses.find((clause) => { 
+    let clause = this._clauses.find((clause) => {
       return clause.on === on;
     });
 
@@ -39,6 +38,25 @@ export class JoinBuilder {
     }
 
     return clause;
+  }
+
+  /**
+   * Returns the {@link WhereBuilder} for the given join field.
+   *
+   * Creates and caches a new instance on first access.
+   *
+   * @param {string} on - The `Join Field` name.
+   * @returns {WhereBuilder} The cached or newly created builder.
+   */
+  private _getOrCreateWhereBuilder(on: string): WhereBuilder {
+    let builder = this._whereBuilders.get(on);
+
+    if (builder === undefined) {
+      builder = new WhereBuilder();
+      this._whereBuilders.set(on, builder);
+    }
+
+    return builder;
   }
 
  /**
@@ -137,7 +155,7 @@ export class JoinBuilder {
   * Adds a `where` condition scoped to a `Join Field`.
   *
   * Multiple calls for the same join accumulate via
-  * the internal {@link WhereBuilderRegistry}.
+  * an internal {@link WhereBuilder} cache.
   *
   * @param {string} on - The `Join Field` name.
   * @param {string} field - The field to compare.
@@ -147,7 +165,7 @@ export class JoinBuilder {
   * @returns {this} The current builder for chaining.
   */
   where(on: string, field: string, operator: Operator, value: JsonValue): this {
-    const builder = this._registry.get(on);
+    const builder = this._getOrCreateWhereBuilder(on);
     
     builder.where(field, operator, value);
 
@@ -169,7 +187,7 @@ export class JoinBuilder {
   * @returns {this} The current builder for chaining.
   */
   and(on: string, callback: (builder: WhereBuilder) => void): this {
-    const builder = this._registry.get(on);
+    const builder = this._getOrCreateWhereBuilder(on);
 
     builder.and(callback);
 
@@ -191,7 +209,7 @@ export class JoinBuilder {
   * @returns {this} The current builder for chaining.
   */
   or(on: string, callback: (builder: WhereBuilder) => void): this {
-    const builder = this._registry.get(on);
+    const builder = this._getOrCreateWhereBuilder(on);
     
     builder.or(callback);
 

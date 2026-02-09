@@ -65,8 +65,7 @@ PAYLOAD-CMS-HTTP-CLIENT/
 │   │   ├── AndClause.ts
 │   │   ├── JoinClause.ts
 │   │   ├── OrClause.ts
-│   │   ├── WhereClause.ts
-│   │   └── WhereBuilderRegistry.ts
+│   │   └── WhereClause.ts
 │   │
 │   └── index.ts           # Barrel export
 │

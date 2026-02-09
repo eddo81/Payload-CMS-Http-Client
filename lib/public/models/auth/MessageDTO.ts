@@ -3,7 +3,8 @@ import type { Json } from "../../types/Json.js";
 /**
  * Represents a simple message response from Payload CMS.
  *
- * Used by `forgot-password` and `verify-email` endpoints.
+ * Used by `forgot-password`, `verify-email`, `logout`,
+ * and `unlock` endpoints.
  */
 export class MessageDTO {
   message: string = '';

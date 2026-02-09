@@ -33,6 +33,9 @@ This document outlines the prioritized tasks identified during the project audit
 | `refreshToken()` | POST | `/api/{slug}/refresh-token` | — | `{ token, user }` |
 | `forgotPassword()` | POST | `/api/{slug}/forgot-password` | `{ email }` | `{ message }` |
 | `resetPassword()` | POST | `/api/{slug}/reset-password` | `{ token, password }` | `{ token, user }` |
+| `verifyEmail()` | POST | `/api/{slug}/verify/{token}` | — | `{ message }` |
+| `logout()` | POST | `/api/{slug}/logout` | — | `{ message }` |
+| `unlock()` | POST | `/api/{slug}/unlock` | `{ email }` | `{ message }` |
 
 ### Tier 4: Version Operations
 
@@ -110,7 +113,7 @@ The `Json` type (`lib/types/Json.ts`) is portable by concept. The core shape `Js
 
 ### Generic Registry Pattern
 
-The "get-or-create by string key" pattern appears in both `WhereBuilderRegistry` and `JoinBuilder._getOrCreateClause()`. If a third consumer emerges, consider extracting a generic `Registry<T>` with a factory callback. Maps to `Registry<T>` in C# and Dart with no portability concerns.
+The "get-or-create by string key" pattern appears in `JoinBuilder` for both `JoinClause` and `WhereBuilder` caching. Previously `WhereBuilderRegistry` was a separate class, but was inlined into `JoinBuilder` since it was the sole consumer. If a third use emerges, consider extracting a generic `Registry<T>` with a factory callback. Maps to `Registry<T>` in C# and Dart with no portability concerns.
 
 ### Portability Audit (Completed)
 
@@ -174,6 +177,8 @@ The following TypeScript constructs have direct equivalents in C# and Dart and r
 - [x] Implement `forgotPassword()` method
 - [x] Implement `resetPassword()` method
 - [x] Implement `verifyEmail()` method
+- [x] Implement `logout()` method
+- [x] Implement `unlock()` method
 
 **Tier 5 - Extensibility**
 - [x] Expose public `request()` method for custom endpoints (mirrors SDK's escape hatch for non-standard routes)

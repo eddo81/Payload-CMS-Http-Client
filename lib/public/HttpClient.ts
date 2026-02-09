@@ -682,4 +682,50 @@ export class HttpClient {
 
     return dto;
   }
+
+  /**
+   * Logs out the currently authenticated user.
+   *
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   *
+   * @returns {Promise<MessageDTO>} A message confirming the logout.
+   */
+  async logout(options: { slug: string }): Promise<MessageDTO> {
+    const { slug } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/logout`;
+    const method: HttpMethod = 'POST';
+
+    const config: RequestInit = {
+      method: method,
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = MessageDTO.fromJson(json);
+
+    return dto;
+  }
+
+  /**
+   * Unlocks a user account locked by failed login attempts.
+   *
+   * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {Json} options.data - The request data (e.g. `{ email }`).
+   *
+   * @returns {Promise<MessageDTO>} A message confirming the unlock.
+   */
+  async unlock(options: { slug: string; data: Json }): Promise<MessageDTO> {
+    const { slug, data } = options;
+    const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/unlock`;
+    const method: HttpMethod = 'POST';
+
+    const config: RequestInit = {
+      method: method,
+      body: JSON.stringify(data),
+    };
+
+    const json = await this._fetch(url, config) ?? {};
+    const dto = MessageDTO.fromJson(json);
+
+    return dto;
+  }
 }

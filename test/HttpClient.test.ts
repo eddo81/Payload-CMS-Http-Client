@@ -281,6 +281,33 @@ harness.add('forgotPassword() should return a message', async () => {
   TestHarness.assertTrue(result.message !== '');
 });
 
+harness.add('logout() should return a message', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  // Login first to get a valid session
+  const loginResult = await client.login({
+    slug: 'users',
+    data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+  });
+
+  client.setAuth(new lib.JwtAuth(loginResult.token));
+
+  const result = await client.logout({ slug: 'users' });
+
+  TestHarness.assertTrue(result.message !== '');
+});
+
+harness.add('unlock() should return a message', async () => {
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+
+  const result = await client.unlock({
+    slug: 'users',
+    data: { email: TEST_EMAIL },
+  });
+
+  TestHarness.assertTrue(result.message !== '');
+});
+
 harness.add('me() without auth should return an empty user', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
 

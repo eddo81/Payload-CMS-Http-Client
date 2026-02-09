@@ -96,8 +96,8 @@ Maps to:
 
 ## Common Patterns
 
-### Get-or-Create Registry
-Used in `WhereBuilderRegistry` and `JoinBuilder._getOrCreateClause()`. If a third consumer emerges, extract to generic `Registry<T>`.
+### Get-or-Create Pattern
+Used in `JoinBuilder` for both `JoinClause` and `WhereBuilder` caching. If a third consumer emerges, extract to generic `Registry<T>`.
 
 ### Clause Strategy
 `IClause` implementations (`WhereClause`, `AndClause`, `OrClause`, `JoinClause`) each have a `build(): Json` method for serialization.
