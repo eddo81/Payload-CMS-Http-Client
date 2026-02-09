@@ -1,4 +1,4 @@
-import { ApiKeyAuth } from '../lib/config/ApiKeyAuth.ts';
+import { ApiKeyAuth } from '../lib/public/config/ApiKeyAuth.ts';
 import { TestHarness } from './TestHarness.ts';
 
 const harness = new TestHarness();

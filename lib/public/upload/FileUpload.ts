@@ -1,4 +1,4 @@
-import type { IFileUpload } from "../internal/contracts/IFileUpload.js";
+import type { IFileUpload } from "../../internal/contracts/IFileUpload.js";
 
 /**
  * Represents a file to upload to a Payload CMS `upload` collection.

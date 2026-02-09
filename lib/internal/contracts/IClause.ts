@@ -1,4 +1,4 @@
-import type { Json } from "../../types/Json.js";
+import type { Json } from "../../public/types/Json.js";
 
 /**
  * Contract for a serializable query clause strategy.

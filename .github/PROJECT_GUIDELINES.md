@@ -18,7 +18,7 @@ All features must strive for **parity with Payload CMS’s core mechanics**. As 
 
 Consider the following examples:
 
-* Payload’s REST API queries use the **`Where` type** to specify filters when querying documents: [payload repo → index.ts](https://github.com/payloadcms/payload/blob/main/packages/payload/src/types/index.ts#L138). Our own library performs the same task via the *"and()"*, *"or()"* and *"where()"* methods of the **`QueryBuilder` class** instead: [library repo → QueryBuilder.ts](https://github.com/eddo81/Payload-CMS-Http-Client/blob/main/lib/QueryBuilder.ts).
+* Payload’s REST API queries use the **`Where` type** to specify filters when querying documents: [payload repo → index.ts](https://github.com/payloadcms/payload/blob/main/packages/payload/src/types/index.ts#L138). Our own library performs the same task via the *"and()"*, *"or()"* and *"where()"* methods of the **`QueryBuilder` class** instead: [library repo → QueryBuilder.ts](https://github.com/eddo81/Payload-CMS-Http-Client/blob/main/lib/public/QueryBuilder.ts).
 
 * Payload internally uses **`qs-esm` stringify** for encoding: [qs-esm → stringify.js](https://github.com/payloadcms/qs-esm/blob/main/lib/stringify.js). Instead of relying on a more generalized third party dependency for encoding we provide our own **`QueryStringEncoder` class** for this: [library repo → QueryStringEncoder.ts](https://github.com/eddo81/Payload-CMS-Http-Client/blob/main/lib/internal/utils/QueryStringEncoder.ts).
 

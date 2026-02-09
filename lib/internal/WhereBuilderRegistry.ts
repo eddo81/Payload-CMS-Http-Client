@@ -1,4 +1,4 @@
-import { WhereBuilder } from "../WhereBuilder.js";
+import { WhereBuilder } from "../public/WhereBuilder.js";
 
 /**
  * Lazily provisions and caches {@link WhereBuilder} instances by key.

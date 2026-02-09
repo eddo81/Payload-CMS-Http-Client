@@ -1,6 +1,6 @@
 import type { IClause } from "./contracts/IClause.js";
-import type { Operator } from "../types/Operator.js";
-import type { Json, JsonValue } from "../types/Json.js";
+import type { Operator } from "../public/types/Operator.js";
+import type { Json, JsonValue } from "../public/types/Json.js";
 
 /**
  * Represents a single field comparison condition.

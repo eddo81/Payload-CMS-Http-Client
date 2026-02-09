@@ -1,4 +1,4 @@
-import type { JsonValue, Json } from "../../types/Json.js";
+import type { JsonValue, Json } from "../../public/types/Json.js";
 
 /**
  * Determines whether the value is a plain JSON object.

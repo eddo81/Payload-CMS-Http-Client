@@ -1,4 +1,4 @@
-import type { IAuthCredential } from "../internal/contracts/IAuthCredential.js";
+import type { IAuthCredential } from "../../internal/contracts/IAuthCredential.js";
 
 /**
  * {@link IAuthCredential} for Payload CMS `API Key` authentication.

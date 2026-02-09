@@ -1,5 +1,5 @@
 import { DocumentDTO } from "../collection/DocumentDTO.js";
-import { isJsonObject } from "../../internal/utils/isJsonObject.js";
+import { isJsonObject } from "../../../internal/utils/isJsonObject.js";
 import type { Json } from "../../types/Json.js";
 
 /**

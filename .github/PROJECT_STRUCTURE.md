@@ -17,42 +17,67 @@ PAYLOAD-CMS-HTTP-CLIENT/
 │   └── PROJECT_STRUCTURE.md
 │
 ├── lib/
+│   ├── public/
+│   │   ├── config/
+│   │   │   ├── ApiKeyAuth.ts
+│   │   │   └── JwtAuth.ts
+│   │   │
+│   │   ├── models/
+│   │   │   ├── auth/
+│   │   │   │   ├── LoginResultDTO.ts
+│   │   │   │   ├── MeResultDTO.ts
+│   │   │   │   ├── MessageDTO.ts
+│   │   │   │   ├── RefreshResultDTO.ts
+│   │   │   │   └── ResetPasswordResultDTO.ts
+│   │   │   │
+│   │   │   └── collection/
+│   │   │       ├── DocumentDTO.ts
+│   │   │       ├── PaginatedDocsDTO.ts
+│   │   │       └── TotalDocsDTO.ts
+│   │   │
+│   │   ├── types/
+│   │   │   ├── HttpMethod.ts
+│   │   │   ├── Json.ts
+│   │   │   └── Operator.ts
+│   │   │
+│   │   ├── upload/
+│   │   │   └── FileUpload.ts
+│   │   │
+│   │   ├── HttpClient.ts
+│   │   ├── JoinBuilder.ts
+│   │   ├── PayloadError.ts
+│   │   ├── QueryBuilder.ts
+│   │   └── WhereBuilder.ts
+│   │
 │   ├── internal/
 │   │   ├── contracts/
-│   │   │   └── IClause.ts
+│   │   │   ├── IAuthCredential.ts
+│   │   │   ├── IClause.ts
+│   │   │   └── IFileUpload.ts
+│   │   │
+│   │   ├── upload/
+│   │   │   └── FormDataBuilder.ts
 │   │   │
 │   │   ├── utils/
-│   │   │    └── QueryStringEncoder.ts
+│   │   │   ├── QueryStringEncoder.ts
+│   │   │   └── isJsonObject.ts
 │   │   │
 │   │   ├── AndClause.ts
 │   │   ├── JoinClause.ts
 │   │   ├── OrClause.ts
-│   │   └── WhereClause.ts
+│   │   ├── WhereClause.ts
+│   │   └── WhereBuilderRegistry.ts
 │   │
-│   ├── models/
-│   │   ├── DocumentDTO.ts
-│   │   ├── PaginatedDocsDTO.ts
-│   │   └── QueryParametersDTO.ts
-│   │
-│   ├── types/
-│   │   ├── Json.ts
-│   │   └── Operator.ts   
-│   │
-│   ├── HttpClient.ts
-│   ├── index.ts           # Barrel export for main library modules
-│   ├── JoinBuilder.ts
-│   ├── PayloadError.ts
-│   ├── QueryBuilder.ts
-│   └── WhereBuilder.ts
-│
-├── node_modules/
+│   └── index.ts           # Barrel export
 │
 ├── test/
+│   ├── ApiKeyAuth.test.ts
 │   ├── HttpClient.test.ts
 │   ├── JoinBuilder.test.ts
 │   ├── QueryBuilder.test.ts
 │   ├── QueryStringEncoder.test.ts
-│   ├── run-tests.ts
+│   ├── run-unit-tests.ts
+│   ├── run-integration-tests.ts
 │   └── TestHarness.ts
 │
 ├── package-lock.json
@@ -67,39 +92,17 @@ PAYLOAD-CMS-HTTP-CLIENT/
 | Folder | Purpose | Notes |
 |--------|----------|-------|
 | `.github/` | Project documentation and CI/CD meta files. | Holds contributor guidelines and Copilot context. |
-| `lib/internal/` | Clause primitives for building Payload queries. | Internal logic not intended for public export (mimics C#’s `internal`). |
-| `lib/internal/contracts/` | Internal interfaces. | `IClause` lives here. |
-| `lib/internal/utils/` | General-purpose helpers. | `QueryStringEncoder` lives here. |
-| `lib/models/` | Data Transfer Objects (DTOs) for API responses. | Keeps schema-related code separate from builders. |
-| `lib/types/` | Shared TypeScript types and enums. | E.g., `Operator`, `Json`. |
-
-| `lib/` root | Core public-facing API surface. | Contains `QueryBuilder`, `JoinBuilder`, `WhereBuilder`, `HttpClient`, and `PayloadError`. |
-| `test/` | Unit tests for all library components. | Organized parallel to `lib/`. |
-
----
-
-## Optional Refinements
-
-### 1. Mirror Structure in Test Folder
-
-For large projects:
-```
-test/
-  ├── utils/
-  ├── internal/
-  ├── models/
-  └── HttpClient.test.ts
-```
-
-### 2. Add Specs Folder (Optional)
-
-For mock Payload CMS requests or sample JSON fixtures:
-```
-specs/
-  ├── example-requests.http
-  └── sample-response.json
-```
+| `lib/public/` | Consumer-facing API surface. | Contains `HttpClient`, builders, DTOs, auth, types, and upload. Exported via `index.ts`. |
+| `lib/public/config/` | Authentication credentials. | `ApiKeyAuth`, `JwtAuth`. |
+| `lib/public/models/` | Data Transfer Objects (DTOs) for API responses. | Split into `auth/` and `collection/` subfolders. |
+| `lib/public/types/` | Shared TypeScript types and enums. | `Json`, `Operator`, `HttpMethod`. |
+| `lib/public/upload/` | File upload support. | `FileUpload` class. |
+| `lib/internal/` | Clause primitives and helpers. | Internal logic not intended for public export (mimics C#'s `internal`). |
+| `lib/internal/contracts/` | Internal interfaces. | `IClause`, `IAuthCredential`, `IFileUpload`. |
+| `lib/internal/utils/` | General-purpose helpers. | `QueryStringEncoder`, `isJsonObject`. |
+| `lib/internal/upload/` | Internal upload helpers. | `FormDataBuilder`. |
+| `test/` | Unit and integration tests. | Organized flat in the `test/` folder. |
 
 ---
 
-**Last Updated:** Jan 2026
+**Last Updated:** Feb 2026

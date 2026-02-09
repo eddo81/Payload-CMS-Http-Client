@@ -17,16 +17,21 @@ A lightweight, cross-language portable HTTP client library for Payload CMS's RES
 
 ```
 lib/
-├── config/              # Consumer-facing configuration (HttpClientConfig, EncoderConfig, ApiKeyAuth)
-├── internal/            # Internal implementation (not exported)
-│   ├── contracts/       # Internal interfaces (IClause, IAuthCredential)
-│   └── utils/           # Utilities (QueryStringEncoder)
-├── models/              # DTOs with fromJson/toJson factory methods
-├── types/               # Shared types (Json, Operator)
-├── HttpClient.ts        # Main HTTP client
-├── QueryBuilder.ts      # Fluent query builder facade
-├── WhereBuilder.ts      # Where clause composition
-└── JoinBuilder.ts       # Join clause composition
+├── public/                # Consumer-facing API surface (exported)
+│   ├── config/            # Auth credentials (ApiKeyAuth, JwtAuth)
+│   ├── models/            # DTOs with fromJson/toJson factory methods
+│   ├── types/             # Shared types (Json, Operator, HttpMethod)
+│   ├── upload/            # File upload (FileUpload)
+│   ├── HttpClient.ts      # Main HTTP client
+│   ├── QueryBuilder.ts    # Fluent query builder facade
+│   ├── WhereBuilder.ts    # Where clause composition
+│   ├── JoinBuilder.ts     # Join clause composition
+│   └── PayloadError.ts    # Structured error type
+├── internal/              # Internal implementation (not exported)
+│   ├── contracts/         # Internal interfaces (IClause, IAuthCredential, IFileUpload)
+│   ├── upload/            # FormDataBuilder
+│   └── utils/             # Utilities (QueryStringEncoder, isJsonObject)
+└── index.ts               # Barrel export
 ```
 
 ## Key Design Principles
@@ -78,7 +83,7 @@ Future<DocumentDTO> create({required String slug, required Json data, String? lo
 
 ## Type System
 
-The `Json` type (`lib/types/Json.ts`) is the core serialization type:
+The `Json` type (`lib/public/types/Json.ts`) is the core serialization type:
 ```typescript
 type Json = { [key: string]: JsonValue };
 type JsonValue = JsonPrimitive | JsonArray | Json;

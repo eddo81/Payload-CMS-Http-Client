@@ -8,11 +8,11 @@ import { ResetPasswordResultDTO } from "./models/auth/ResetPasswordResultDTO.js"
 import { MessageDTO } from "./models/auth/MessageDTO.js";
 import { PayloadError } from "./PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
-import { QueryStringEncoder } from "./internal/utils/QueryStringEncoder.js";
-import type { IAuthCredential } from "./internal/contracts/IAuthCredential.js";
+import { QueryStringEncoder } from "../internal/utils/QueryStringEncoder.js";
+import type { IAuthCredential } from "../internal/contracts/IAuthCredential.js";
 import type { Json } from "./types/Json";
-import type { IFileUpload } from "./internal/contracts/IFileUpload.js";
-import { FormDataBuilder } from "./internal/upload/FormDataBuilder.js";
+import type { IFileUpload } from "../internal/contracts/IFileUpload.js";
+import { FormDataBuilder } from "../internal/upload/FormDataBuilder.js";
 import { HttpMethod } from "./types/HttpMethod.js";
 
 /**

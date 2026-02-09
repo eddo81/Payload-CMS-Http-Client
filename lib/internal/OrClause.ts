@@ -1,5 +1,5 @@
 import type { IClause } from "./contracts/IClause.js";
-import type { Json } from "../types/Json.js";
+import type { Json } from "../public/types/Json.js";
 
 /**
  * Represents a logical `OR` grouping of {@link IClause} instances.

@@ -1,6 +1,6 @@
-import { JoinClause } from "./internal/JoinClause.js";
+import { JoinClause } from "../internal/JoinClause.js";
 import { WhereBuilder } from "./WhereBuilder.js";
-import { WhereBuilderRegistry } from "./internal/WhereBuilderRegistry.js";
+import { WhereBuilderRegistry } from "../internal/WhereBuilderRegistry.js";
 import type { Operator } from "./types/Operator.js";
 import type { Json, JsonValue } from "./types/Json.js";
 

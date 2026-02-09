@@ -1,4 +1,4 @@
-import { QueryBuilder } from '../lib/QueryBuilder.ts';
+import { QueryBuilder } from '../lib/public/QueryBuilder.ts';
 import { QueryStringEncoder } from '../lib/internal/utils/QueryStringEncoder.ts';
 import { TestHarness, Normalize } from './TestHarness.ts';
 

@@ -1,5 +1,5 @@
 import type { IClause } from "./contracts/IClause.js";
-import type { Json } from "../types/Json.js";
+import type { Json } from "../public/types/Json.js";
 
 /**
  * Accumulates join-scoped operations for a single `Join Field`.
