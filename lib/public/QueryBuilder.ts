@@ -1,4 +1,4 @@
-import type { Operator } from "./types/Operator";
+import type { Operator } from "./enums/Operator.js";
 import type { JsonValue } from "./types/Json.js";
 import { WhereBuilder } from "./WhereBuilder.js";
 import { JoinBuilder } from "./JoinBuilder.js";

@@ -14,6 +14,6 @@ export * from './public/models/auth/RefreshResultDTO.js';
 export * from './public/models/auth/ResetPasswordResultDTO.js';
 export * from './public/models/auth/MessageDTO.js';
 export * from './public/types/Json.js';
-export * from './public/types/Operator.js';
-export * from './public/types/HttpMethod.js';
+export * from './public/enums/Operator.js';
+export * from './public/enums/HttpMethod.js';
 export * from './public/upload/FileUpload.js';

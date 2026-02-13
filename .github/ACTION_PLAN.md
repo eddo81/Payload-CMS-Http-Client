@@ -107,9 +107,9 @@ Payload CMS supports JWT-based authentication via login endpoints. Tokens are re
 
 ## Portability Notes
 
-### Json Type
+### String Enums
 
-The `Json` type (`lib/types/Json.ts`) is portable by concept. The core shape `Json = { [key: string]: JsonValue }` maps directly to `Dictionary<string, object?>` in C# and `Map<String, dynamic>` in Dart. The recursive union subtypes (`JsonValue`, `JsonPrimitive`, `JsonArray`) provide compile-time safety specific to TypeScript and have no direct equivalent in C#/Dart, but are unnecessary there since those languages use `object`/`dynamic` for the same purpose.
+`Operator` and `HttpMethod` were converted from type aliases to string enums (`lib/public/enums/`). These map directly to C#/Dart enum equivalents and provide runtime values, exhaustive matching, and IDE autocomplete. The `Json` type remains a plain type alias (`{ [key: string]: JsonValue }`) — each language uses its native dictionary type (`Dictionary<string, object?>` in C#, `Map<String, dynamic>` in Dart).
 
 ### Generic Registry Pattern
 
@@ -120,7 +120,7 @@ The "get-or-create by string key" pattern appears in `JoinBuilder` for both `Joi
 Audit performed and resolved. Three issues were fixed:
 
 1. **`JoinBuilder.build()` returned `Json | false | undefined`** — Union with a `false` literal has no clean equivalent in C#/Dart. Split into a `Json | undefined` return + a public `isDisabled` getter. `QueryBuilder` now checks `isDisabled` separately.
-2. **`isJsonObject` duplicated across 5 DTOs** — Extracted to shared utility in `lib/internal/utils/isJsonObject.ts`. Maps to a static helper in C# or a top-level function in Dart.
+2. **`isJsonObject` duplicated across 5 DTOs** — Extracted to shared utility (`lib/internal/utils/isJsonObject.ts`).
 3. **Unused `import { HttpClient }` in PayloadError.ts** — Removed (was only for JSDoc `{@link}`).
 
 The following TypeScript constructs have direct equivalents in C# and Dart and require only mechanical translation — no architectural changes needed:

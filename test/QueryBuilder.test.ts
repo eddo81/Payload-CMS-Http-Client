@@ -1,4 +1,4 @@
-import { QueryBuilder } from '../lib/public/QueryBuilder.ts';
+import * as lib from '../lib/index.ts';
 import { QueryStringEncoder } from '../lib/internal/utils/QueryStringEncoder.ts';
 import { TestHarness, Normalize } from './TestHarness.ts';
 
@@ -6,7 +6,7 @@ const encoder = new QueryStringEncoder({ addQueryPrefix: false });
 const harness = new TestHarness();
 
 harness.add('select() should serialize as comma-separated list', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .select(['title', 'author'])
     .build();
 
@@ -17,7 +17,7 @@ harness.add('select() should serialize as comma-separated list', () => {
 });
 
 harness.add('sort() and sortByDescending() should serialize as comma-separated list', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .sort('date')
     .sortByDescending('title')
     .build();
@@ -29,7 +29,7 @@ harness.add('sort() and sortByDescending() should serialize as comma-separated l
 });
 
 harness.add('populate() should serialize as comma-separated list', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .populate(['author', 'comments'])
     .build();
 
@@ -40,10 +40,10 @@ harness.add('populate() should serialize as comma-separated list', () => {
 });
 
 harness.add('where() with nested OR group should flatten correctly', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .or(group => {
-      group.where('title', 'equals', 'foo')
-           .where('title', 'equals', 'bar');
+      group.where('title', lib.Operator.Equals, 'foo')
+           .where('title', lib.Operator.Equals, 'bar');
     })
     .build();
 
@@ -54,12 +54,12 @@ harness.add('where() with nested OR group should flatten correctly', () => {
 });
 
 harness.add('Mixed logical nesting (AND containing OR) should flatten correctly', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .and(group => {
-      group.where('status', 'equals', 'published')
+      group.where('status', lib.Operator.Equals, 'published')
            .or(inner => {
-             inner.where('title', 'equals', 'foo')
-                  .where('title', 'equals', 'bar');
+             inner.where('title', lib.Operator.Equals, 'foo')
+                  .where('title', lib.Operator.Equals, 'bar');
            });
     })
     .build();
@@ -75,9 +75,9 @@ harness.add('Mixed logical nesting (AND containing OR) should flatten correctly'
 });
 
 harness.add('Multiple where() calls should merge fields correctly', () => {
-  const params = new QueryBuilder()
-    .where('title', 'equals', 'foo')
-    .where('status', 'equals', 'published')
+  const params = new lib.QueryBuilder()
+    .where('title', lib.Operator.Equals, 'foo')
+    .where('status', lib.Operator.Equals, 'published')
     .build();
 
   const actual = encoder.stringify(params);
@@ -87,10 +87,10 @@ harness.add('Multiple where() calls should merge fields correctly', () => {
 });
 
 harness.add('Or groups should produce correct nested tree', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .or(group => {
-      group.where('title', 'equals', 'foo')
-           .where('status', 'equals', 'published');
+      group.where('title', lib.Operator.Equals, 'foo')
+           .where('status', lib.Operator.Equals, 'published');
     })
     .build();
 
@@ -101,9 +101,9 @@ harness.add('Or groups should produce correct nested tree', () => {
 });
 
 harness.add('QueryBuilder should overwrite where result instead of merging', () => {
-  const params = new QueryBuilder()
-    .where('title', 'equals', 'foo')
-    .where('title', 'equals', 'bar')
+  const params = new lib.QueryBuilder()
+    .where('title', lib.Operator.Equals, 'foo')
+    .where('title', lib.Operator.Equals, 'bar')
     .build();
 
   const actual = encoder.stringify(params);

@@ -13,7 +13,7 @@ import type { IAuthCredential } from "../internal/contracts/IAuthCredential.js";
 import type { Json } from "./types/Json";
 import type { IFileUpload } from "../internal/contracts/IFileUpload.js";
 import { FormDataBuilder } from "../internal/upload/FormDataBuilder.js";
-import { HttpMethod } from "./types/HttpMethod.js";
+import { HttpMethod } from "./enums/HttpMethod.js";
 
 /**
  * HTTP client for the Payload CMS REST API.
@@ -159,7 +159,7 @@ export class HttpClient {
     let response: Response;
     let text: string;
     let json: Json | undefined = undefined;
-    let defaultMethod: HttpMethod = 'GET';
+    let defaultMethod: HttpMethod = HttpMethod.GET;
 
     let headers: Record<string, string> = {
       Accept: "application/json",
@@ -268,7 +268,7 @@ export class HttpClient {
   async create(options: { slug: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
     const { slug, data, file } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -292,7 +292,7 @@ export class HttpClient {
   async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
     const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
-    const method: HttpMethod = 'DELETE';
+    const method: HttpMethod = HttpMethod.DELETE;
 
     const config: RequestInit = {
       method: method,
@@ -315,7 +315,7 @@ export class HttpClient {
   async deleteById(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
-    const method: HttpMethod = 'DELETE';
+    const method: HttpMethod = HttpMethod.DELETE;
 
     const config: RequestInit = {
       method: method,
@@ -340,7 +340,7 @@ export class HttpClient {
   async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IFileUpload }): Promise<PaginatedDocsDTO> {
     const { slug, data, query, file } = options;
     const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
-    const method: HttpMethod = 'PATCH';
+    const method: HttpMethod = HttpMethod.PATCH;
 
     const config: RequestInit = {
       method: method,
@@ -366,7 +366,7 @@ export class HttpClient {
   async updateById(options: { slug: string; id: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
     const { slug, id, data, file } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
-    const method: HttpMethod = 'PATCH';
+    const method: HttpMethod = HttpMethod.PATCH;
 
     const config: RequestInit = {
       method: method,
@@ -423,7 +423,7 @@ export class HttpClient {
   async updateGlobal(options: { slug: string; data: Json }): Promise<DocumentDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -481,7 +481,7 @@ export class HttpClient {
   async restoreVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const method: HttpMethod = 'POST'; 
+    const method: HttpMethod = HttpMethod.POST; 
     
     const config: RequestInit = {
       method: method,
@@ -538,7 +538,7 @@ export class HttpClient {
   async restoreGlobalVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
     
     const config: RequestInit = {
       method: method,
@@ -561,7 +561,7 @@ export class HttpClient {
   async login(options: { slug: string; data: Json }): Promise<LoginResultDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/login`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -600,7 +600,7 @@ export class HttpClient {
   async refreshToken(options: { slug: string }): Promise<RefreshResultDTO> {
     const { slug } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/refresh-token`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -623,7 +623,7 @@ export class HttpClient {
   async forgotPassword(options: { slug: string; data: Json }): Promise<MessageDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/forgot-password`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -647,7 +647,7 @@ export class HttpClient {
   async resetPassword(options: { slug: string; data: Json }): Promise<ResetPasswordResultDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/reset-password`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -671,7 +671,7 @@ export class HttpClient {
   async verifyEmail(options: { slug: string; token: string }): Promise<MessageDTO> {
     const { slug, token } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/verify/${encodeURIComponent(token)}`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -693,7 +693,7 @@ export class HttpClient {
   async logout(options: { slug: string }): Promise<MessageDTO> {
     const { slug } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/logout`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
@@ -716,7 +716,7 @@ export class HttpClient {
   async unlock(options: { slug: string; data: Json }): Promise<MessageDTO> {
     const { slug, data } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/unlock`;
-    const method: HttpMethod = 'POST';
+    const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,

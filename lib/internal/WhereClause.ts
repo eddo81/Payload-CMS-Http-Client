@@ -1,5 +1,5 @@
 import type { IClause } from "./contracts/IClause.js";
-import type { Operator } from "../public/types/Operator.js";
+import type { Operator } from "../public/enums/Operator.js";
 import type { Json, JsonValue } from "../public/types/Json.js";
 
 /**

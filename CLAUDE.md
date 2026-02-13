@@ -20,7 +20,8 @@ lib/
 ├── public/                # Consumer-facing API surface (exported)
 │   ├── config/            # Auth credentials (ApiKeyAuth, JwtAuth)
 │   ├── models/            # DTOs with fromJson/toJson factory methods
-│   ├── types/             # Shared types (Json, Operator, HttpMethod)
+│   ├── enums/             # String enums (Operator, HttpMethod)
+│   ├── types/             # Shared types (Json, JsonValue, JsonObject, etc.)
 │   ├── upload/            # File upload (FileUpload)
 │   ├── HttpClient.ts      # Main HTTP client
 │   ├── QueryBuilder.ts    # Fluent query builder facade
@@ -30,7 +31,7 @@ lib/
 ├── internal/              # Internal implementation (not exported)
 │   ├── contracts/         # Internal interfaces (IClause, IAuthCredential, IFileUpload)
 │   ├── upload/            # FormDataBuilder
-│   └── utils/             # Utilities (QueryStringEncoder, isJsonObject)
+│   └── utils/             # Utilities (QueryStringEncoder)
 └── index.ts               # Barrel export
 ```
 
@@ -71,28 +72,33 @@ This maps to native named parameters in C#/Dart:
 
 ```csharp
 // C# - native named/optional params
-Task<DocumentDTO> Create(string slug, Json data, string? locale = null, int? depth = null)
+Task<DocumentDTO> Create(string slug, Dictionary<string, object?> data, string? locale = null, int? depth = null)
 ```
 
 ```dart
 // Dart - required + named optional
-Future<DocumentDTO> create({required String slug, required Json data, String? locale, int? depth})
+Future<DocumentDTO> create({required String slug, required Map<String, dynamic> data, String? locale, int? depth})
 ```
 
 **Porting rule**: Inline option objects in TS → native named parameters in C#/Dart. No separate interface/class files needed.
 
 ## Type System
 
-The `Json` type (`lib/public/types/Json.ts`) is the core serialization type:
+The `Json` type alias (`lib/public/types/Json.ts`) is the core serialization type — a plain string-keyed dictionary. Each language uses its native equivalent directly.
+
 ```typescript
-type Json = { [key: string]: JsonValue };
-type JsonValue = JsonPrimitive | JsonArray | Json;
 type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+type JsonObject = { [key: string]: JsonValue };
+type JsonArray = JsonValue[];
+type Json = JsonObject;  // convenience alias
 ```
 
+`Operator` and `HttpMethod` are string enums (`lib/public/enums/`) mapping directly to C#/Dart enum equivalents.
+
 Maps to:
-- C#: `Dictionary<string, object?>`
-- Dart: `Map<String, dynamic>`
+- C#: `Dictionary<string, object?>` with `JsonSerializer.Serialize()`/`Deserialize()`
+- Dart: `Map<String, dynamic>` with `jsonEncode()`/`jsonDecode()`
 
 ## Common Patterns
 
@@ -114,9 +120,7 @@ Used in `JoinBuilder` for both `JoinClause` and `WhereBuilder` caching. If a thi
 
 ## Current Status
 
-See `.github/ACTION_PLAN.md` for task tracking. Key pending items:
-- [ ] JWT authentication support
-- [ ] Implement remaining HttpClient methods (create, update, delete variants)
+All tiers complete (Core, Globals, Auth, Versions, Extensibility). Full API parity with Payload CMS REST API. See `.github/ACTION_PLAN.md` for task tracking.
 
 ## Reference: @shopnex/payload-sdk
 

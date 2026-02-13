@@ -1,4 +1,4 @@
-import { QueryBuilder } from '../lib/public/QueryBuilder.ts';
+import * as lib from '../lib/index.ts';
 import { QueryStringEncoder } from '../lib/internal/utils/QueryStringEncoder.ts';
 import { TestHarness } from './TestHarness.ts';
 
@@ -6,10 +6,10 @@ const encoder = new QueryStringEncoder({ addQueryPrefix: false });
 const harness = new TestHarness();
 
 harness.add('JoinBuilder should produce correct nested object structure', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => { 
       joinBuilder
-        .where('posts', 'author', 'equals', 'Alice')
+        .where('posts', 'author', lib.Operator.Equals, 'Alice')
         .sortByDescending('posts', 'title')
         .limit('posts', 1);
     })
@@ -23,11 +23,11 @@ harness.add('JoinBuilder should produce correct nested object structure', () => 
 });
 
 harness.add('JoinBuilder should overwrite duplicate results', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => { 
       joinBuilder
-        .where('posts', 'author', 'equals', 'Alice')
-        .where('posts', 'author', 'equals', 'Bob');
+        .where('posts', 'author', lib.Operator.Equals, 'Alice')
+        .where('posts', 'author', lib.Operator.Equals, 'Bob');
     })
     .build();
 
@@ -39,7 +39,7 @@ harness.add('JoinBuilder should overwrite duplicate results', () => {
 });
 
 harness.add('JoinBuilder should omit empty values', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => { 
       joinBuilder
         .sort('posts', '');
@@ -54,7 +54,7 @@ harness.add('JoinBuilder should omit empty values', () => {
 });
 
 harness.add('JoinBuilder should support multiple join fields', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder
         .limit('posts', 5)
@@ -72,7 +72,7 @@ harness.add('JoinBuilder should support multiple join fields', () => {
 });
 
 harness.add('JoinBuilder should ignore invalid operations but keep valid ones', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder
         .sort('posts', '')
@@ -88,7 +88,7 @@ harness.add('JoinBuilder should ignore invalid operations but keep valid ones', 
 });
 
 harness.add('JoinBuilder should accumulate across multiple join() calls', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder.limit('posts', 2);
     })
@@ -105,11 +105,11 @@ harness.add('JoinBuilder should accumulate across multiple join() calls', () => 
 });
 
 harness.add('JoinBuilder should accumulate multiple where() on different fields', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder
-        .where('posts', 'status', 'equals', 'published')
-        .where('posts', 'author', 'equals', 'Alice');
+        .where('posts', 'status', lib.Operator.Equals, 'published')
+        .where('posts', 'author', lib.Operator.Equals, 'Alice');
     })
     .build();
 
@@ -121,12 +121,12 @@ harness.add('JoinBuilder should accumulate multiple where() on different fields'
 });
 
 harness.add('JoinBuilder should support nested and() groups', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder.and('posts', group => {
         group
-          .where('status', 'equals', 'published')
-          .where('author', 'equals', 'Alice');
+          .where('status', lib.Operator.Equals, 'published')
+          .where('author', lib.Operator.Equals, 'Alice');
       });
     })
     .build();
@@ -139,12 +139,12 @@ harness.add('JoinBuilder should support nested and() groups', () => {
 });
 
 harness.add('JoinBuilder should support nested or() groups', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder.or('posts', group => {
         group
-          .where('author', 'equals', 'Alice')
-          .where('author', 'equals', 'Bob');
+          .where('author', lib.Operator.Equals, 'Alice')
+          .where('author', lib.Operator.Equals, 'Bob');
       });
     })
     .build();
@@ -157,15 +157,15 @@ harness.add('JoinBuilder should support nested or() groups', () => {
 });
 
 harness.add('JoinBuilder should support complex nested and/or combinations', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder.and('posts', group => {
         group
-          .where('status', 'equals', 'published')
+          .where('status', lib.Operator.Equals, 'published')
           .or(inner => {
             inner
-              .where('author', 'equals', 'Alice')
-              .where('author', 'equals', 'Bob');
+              .where('author', lib.Operator.Equals, 'Alice')
+              .where('author', lib.Operator.Equals, 'Bob');
           });
       });
     })
@@ -179,10 +179,10 @@ harness.add('JoinBuilder should support complex nested and/or combinations', () 
 });
 
 harness.add('JoinBuilder should combine where() with other join operations', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder
-        .where('posts', 'status', 'equals', 'published')
+        .where('posts', 'status', lib.Operator.Equals, 'published')
         .limit('posts', 5)
         .sort('posts', 'createdAt');
     })
@@ -196,14 +196,14 @@ harness.add('JoinBuilder should combine where() with other join operations', () 
 });
 
 harness.add('JoinBuilder should accumulate where() and and() on the same join field', () => {
-  const params = new QueryBuilder()
+  const params = new lib.QueryBuilder()
     .join(joinBuilder => {
       joinBuilder
-        .where('posts', 'status', 'equals', 'published')
+        .where('posts', 'status', lib.Operator.Equals, 'published')
         .and('posts', group => {
           group
-            .where('rating', 'greater_than', 3)
-            .where('featured', 'equals', true);
+            .where('rating', lib.Operator.GreaterThan, 3)
+            .where('featured', lib.Operator.Equals, true);
         });
     })
     .build();

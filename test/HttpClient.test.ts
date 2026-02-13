@@ -46,7 +46,7 @@ harness.add('find() should return a paginated list containing the post', async (
 
   const result = await client.find({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('title', 'equals', 'Integration Test Post'),
+    query: new lib.QueryBuilder().where('title', lib.Operator.Equals, 'Integration Test Post'),
   });
 
   TestHarness.assertTrue(result.totalDocs >= 1);
@@ -59,7 +59,7 @@ harness.add('count() should return the correct document count', async () => {
 
   const total = await client.count({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('title', 'equals', 'Integration Test Post'),
+    query: new lib.QueryBuilder().where('title', lib.Operator.Equals, 'Integration Test Post'),
   });
 
   TestHarness.assertTrue(total >= 1);
@@ -124,7 +124,7 @@ harness.add('update() bulk should update matching posts', async () => {
   const result = await client.update({
     slug: 'posts',
     data: { published: false },
-    query: new lib.QueryBuilder().where('title', 'equals', 'Integration Test Post'),
+    query: new lib.QueryBuilder().where('title', lib.Operator.Equals, 'Integration Test Post'),
   });
 
   TestHarness.assertTrue(result.docs.length >= 1);
@@ -138,7 +138,7 @@ harness.add('findVersions() should return versions for the post collection', asy
 
   const result = await client.findVersions({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('parent', 'equals', createdPostId),
+    query: new lib.QueryBuilder().where('parent', lib.Operator.Equals, createdPostId),
   });
 
   TestHarness.assertTrue(result.totalDocs >= 1);
@@ -537,7 +537,7 @@ harness.add('request() GET should return raw JSON', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
 
   const result = await client.request({
-    method: 'GET',
+    method: lib.HttpMethod.GET,
     path: '/api/posts',
   });
 
@@ -549,7 +549,7 @@ harness.add('request() POST with body should create and return raw JSON', async 
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
 
   const result = await client.request({
-    method: 'POST',
+    method: lib.HttpMethod.POST,
     path: '/api/posts',
     body: { title: 'Test Post (request)' },
   });
@@ -562,9 +562,9 @@ harness.add('request() GET with query should append query string', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
 
   const result = await client.request({
-    method: 'GET',
+    method: lib.HttpMethod.GET,
     path: '/api/posts',
-    query: new lib.QueryBuilder().where('title', 'contains', 'request'),
+    query: new lib.QueryBuilder().where('title', lib.Operator.Contains, 'request'),
   });
 
   TestHarness.assertTrue(result !== undefined);
@@ -586,7 +586,7 @@ harness.add('cleanup: delete any remaining test posts', async () => {
 
   const result = await client.delete({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('title', 'contains', 'Test Post'),
+    query: new lib.QueryBuilder().where('title', lib.Operator.Contains, 'Test Post'),
   });
 
   TestHarness.assertTrue(Array.isArray(result.docs));
@@ -597,7 +597,7 @@ harness.add('cleanup: delete any remaining test media', async () => {
 
   const result = await client.delete({
     slug: 'media',
-    query: new lib.QueryBuilder().where('filename', 'contains', 'upload'),
+    query: new lib.QueryBuilder().where('filename', lib.Operator.Contains, 'upload'),
   });
 
   TestHarness.assertTrue(Array.isArray(result.docs));
