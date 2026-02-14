@@ -1,6 +1,5 @@
 import { DocumentDTO } from "./DocumentDTO.js";
-import { isJsonObject } from "../../../internal/utils/isJsonObject.js";
-import type { Json } from "../../types/Json.js";
+import type { Json } from "../../../../types/Json.js";
 
 /**
  * Represents a paginated collection of Payload CMS documents.
@@ -29,7 +28,7 @@ export class PaginatedDocsDTO {
 
     if (Array.isArray(data['docs'])) {
       dto.docs = data['docs']
-        .filter(isJsonObject)
+        .filter((item): item is Json => typeof item === 'object' && item !== null && !Array.isArray(item))
         .map(doc => DocumentDTO.fromJson(doc));
     }
 

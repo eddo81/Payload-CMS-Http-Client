@@ -120,7 +120,7 @@ The "get-or-create by string key" pattern appears in `JoinBuilder` for both `Joi
 Audit performed and resolved. Three issues were fixed:
 
 1. **`JoinBuilder.build()` returned `Json | false | undefined`** — Union with a `false` literal has no clean equivalent in C#/Dart. Split into a `Json | undefined` return + a public `isDisabled` getter. `QueryBuilder` now checks `isDisabled` separately.
-2. **`isJsonObject` duplicated across 5 DTOs** — Extracted to shared utility (`lib/internal/utils/isJsonObject.ts`).
+2. **`isJsonObject` duplicated across 5 DTOs** — Deleted helper, expression inlined in each DTO. No C#/Dart equivalent for TS type guards; inline `typeof`/`is` checks are idiomatic in all languages.
 3. **Unused `import { HttpClient }` in PayloadError.ts** — Removed (was only for JSDoc `{@link}`).
 
 The following TypeScript constructs have direct equivalents in C# and Dart and require only mechanical translation — no architectural changes needed:

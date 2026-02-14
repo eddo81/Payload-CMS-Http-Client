@@ -13,5 +13,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  "include": ["lib", "types", "test"]
 }

@@ -1,6 +1,5 @@
 import { DocumentDTO } from "../collection/DocumentDTO.js";
-import { isJsonObject } from "../../../internal/utils/isJsonObject.js";
-import type { Json } from "../../types/Json.js";
+import type { Json } from "../../../../types/Json.js";
 
 /**
  * Represents the response from a Payload CMS `refresh-token` endpoint.
@@ -29,8 +28,8 @@ export class RefreshResultDTO {
       dto.exp = data['exp'];
     }
 
-    if (isJsonObject(data['user'])) {
-      dto.user = DocumentDTO.fromJson(data['user']);
+    if (typeof data['user'] === 'object' && data['user'] !== null && !Array.isArray(data['user'])) {
+      dto.user = DocumentDTO.fromJson(data['user'] as Json);
     }
 
     return dto;

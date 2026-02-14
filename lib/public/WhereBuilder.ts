@@ -3,7 +3,7 @@ import { AndClause } from "../internal/AndClause.js";
 import { OrClause } from "../internal/OrClause.js";
 import { WhereClause } from "../internal/WhereClause.js";
 import type { Operator } from "./enums/Operator.js";
-import type { Json, JsonValue } from "./types/Json.js";
+import type { Json, JsonValue } from "../../types/Json.js";
 
 /**
  * Fluent builder for nested `where`/`and`/`or` clauses.

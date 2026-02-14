@@ -1,4 +1,4 @@
-import type { Json } from "../../types/Json.js";
+import type { Json } from "../../../../types/Json.js";
 
 /**
  * Represents a total document count from a Payload CMS `collection`.

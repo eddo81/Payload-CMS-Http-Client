@@ -16,12 +16,13 @@ A lightweight, cross-language portable HTTP client library for Payload CMS's RES
 ## Architecture
 
 ```
-lib/
+types/                     # TS-only type aliases (NO equivalent in C#/Dart)
+│   └── Json.ts            # Json, JsonValue, JsonObject, JsonArray, JsonPrimitive
+lib/                       # 1:1 portable — every file has a C#/Dart equivalent
 ├── public/                # Consumer-facing API surface (exported)
 │   ├── config/            # Auth credentials (ApiKeyAuth, JwtAuth)
 │   ├── models/            # DTOs with fromJson/toJson factory methods
 │   ├── enums/             # String enums (Operator, HttpMethod)
-│   ├── types/             # Shared types (Json, JsonValue, JsonObject, etc.)
 │   ├── upload/            # File upload (FileUpload)
 │   ├── HttpClient.ts      # Main HTTP client
 │   ├── QueryBuilder.ts    # Fluent query builder facade
@@ -175,3 +176,4 @@ use context7 to look up Payload CMS REST API documentation
 | Project structure | `.github/PROJECT_STRUCTURE.md` |
 | Builder docs | `.github/QUERY_BUILDER.md`, `.github/JOIN_BUILDER.md` |
 | DTO docs | `.github/DTO.md` |
+| Porting guide | `.github/PORTING.md` |

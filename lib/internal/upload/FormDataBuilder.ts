@@ -1,5 +1,5 @@
 import type { IFileUpload } from "../contracts/IFileUpload.js";
-import type { Json } from "../../public/types/Json.js";
+import type { Json } from "../../../types/Json.js";
 
 /**
  * Constructs a `FormData` body for file upload requests.
