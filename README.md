@@ -831,6 +831,35 @@ const result = await httpClient.find({ slug: 'posts', query: query });
 
 ## DTOs
 
+The included DTOs represent the **lowest common denominator** of a Payload CMS response. Because Payload collections are schema-defined by the consumer, this library cannot know the shape of your documents at compile time. Instead, `DocumentDTO` captures the universal fields (`id`, `createdAt`, `updatedAt`) and exposes the full response as a raw `json` dictionary.
+
+These DTOs are **not intended to be your final domain models**. They serve as a transport-level representation that you should map into richer, typed models in your own application. For example:
+
+```typescript
+// Your domain model
+interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  publishedAt: Date;
+}
+
+// Map from DTO to your model
+function toBlogPost(dto: DocumentDTO): BlogPost {
+  return {
+    id: dto.id,
+    title: dto.json['title'] as string,
+    content: dto.json['content'] as string,
+    author: dto.json['author'] as string,
+    publishedAt: new Date(dto.json['publishedAt'] as string),
+  };
+}
+
+const dto = await httpClient.findById({ slug: 'posts', id: '123' });
+const post: BlogPost = toBlogPost(dto);
+```
+
 ### DocumentDTO
 
 Returned by single-document operations (`create`, `findById`, `updateById`, `deleteById`, globals, versions).
@@ -841,8 +870,6 @@ Returned by single-document operations (`create`, `findById`, `updateById`, `del
 | `json` | `Json` | The full raw JSON payload. |
 | `createdAt` | `Date \| undefined` | Creation timestamp. |
 | `updatedAt` | `Date \| undefined` | Last update timestamp. |
-
-Access any field via `doc.json['fieldName']`.
 
 ### PaginatedDocsDTO
 
@@ -961,20 +988,3 @@ enum HttpMethod {
 }
 ```
 
----
-
-## Portability
-
-This library is designed for mechanical translation to C# and Dart. Key mappings:
-
-| TypeScript | C# | Dart |
-|---|---|---|
-| `Json` | `Dictionary<string, object?>` | `Map<String, dynamic>` |
-| `Promise<T>` | `Task<T>` | `Future<T>` |
-| `Record<string, string>` | `Dictionary<string, string>` | `Map<String, String>` |
-| `Blob` | `byte[]` | `Uint8List` |
-| Inline option objects | Native named parameters | Required + named optional params |
-| `fetch()` | `HttpClient.SendAsync()` | `http.Client.send()` |
-| `??` / `?.` | `??` / `?.` | `??` / `?.` |
-
-See [PORTING.md](.github/PORTING.md) for the full porting guide.
