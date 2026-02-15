@@ -28,14 +28,16 @@ export class HttpClient {
   private _encoder: QueryStringEncoder = new QueryStringEncoder();
 
   constructor(options: { baseUrl: string; headers?: Record<string, string>; auth?: IAuthCredential }) {
-    this._baseUrl = this._normalizeUrl(options.baseUrl);
+    const { baseUrl, headers, auth } = options;
 
-    if(options.headers !== undefined) {
-      this.setHeaders(options.headers);
+    this._baseUrl = this._normalizeUrl({ url: baseUrl });
+
+    if(headers !== undefined) {
+      this.setHeaders({ headers });
     }
-    
-    if(options.auth !== undefined) {
-      this.setAuth(options.auth);
+
+    if(auth !== undefined) {
+      this.setAuth({ auth });
     }
   }
 
@@ -45,13 +47,15 @@ export class HttpClient {
   * Strips trailing slashes to prevent double-slash
   * paths when building endpoint URLs.
   *
-  * @param {string} url - The raw base URL to normalize.
+  * @param {string} options.url - The raw base URL to normalize.
   *
   * @returns {string} The normalized URL without a trailing slash.
   *
   * @throws {Error} If the URL is malformed.
   */
-  private _normalizeUrl(url: string): string {
+  private _normalizeUrl(options: { url: string }): string {
+    const { url } = options;
+
     try {
       const urlString = new URL(url).toString();
       const normalized = urlString.replace(/\/+$/, '');
@@ -69,11 +73,13 @@ export class HttpClient {
   * These are merged with the default `Accept` and
   * `Content-Type` headers at request time.
   *
-  * @param {Record<string, string>} headers - The custom headers to set.
+  * @param {Record<string, string>} options.headers - The custom headers to set.
   *
   * @returns {void}
   */
-  public setHeaders(headers: Record<string, string>): void {
+  public setHeaders(options: { headers: Record<string, string> }): void {
+    const { headers } = options;
+
     this._headers = headers;
   }
 
@@ -83,11 +89,13 @@ export class HttpClient {
   * Pass an {@link IAuthCredential} to inject authorization
   * headers, or `undefined` to clear.
   *
-  * @param {IAuthCredential | undefined} auth - The credential to use, or `undefined` to clear.
+  * @param {IAuthCredential | undefined} options.auth - The credential to use, or `undefined` to clear.
   *
   * @returns {void}
   */
-  public setAuth(auth?: IAuthCredential | undefined): void {
+  public setAuth(options: { auth?: IAuthCredential }): void {
+    const { auth } = options;
+
     this._auth = auth;
   }
 
@@ -107,7 +115,7 @@ export class HttpClient {
   */
   async request(options: { method: HttpMethod; path: string; body?: Json; query?: QueryBuilder }): Promise<Json | undefined> {
     const { method, path, body, query } = options;
-    const url = this._appendQueryString(`${this._baseUrl}${path}`, query);
+    const url = this._appendQueryString({ url: `${this._baseUrl}${path}`, query });
 
     const config: RequestInit = { method };
 
@@ -115,7 +123,7 @@ export class HttpClient {
       config.body = JSON.stringify(body);
     }
 
-    return this._fetch(url, config);
+    return this._fetch({ url, config });
   }
 
  /**
@@ -124,19 +132,21 @@ export class HttpClient {
   * Encodes the {@link QueryBuilder} parameters via
   * {@link QueryStringEncoder} and appends them.
   *
-  * @param {string} url - The base URL to append query parameters to.
-  * @param {QueryBuilder | undefined} queryBuilder - Optional query parameters.
+  * @param {string} options.url - The base URL to append query parameters to.
+  * @param {QueryBuilder | undefined} options.query - Optional query parameters.
   *
   * @returns {string} The URL with an appended query string, if applicable.
   */
-  private _appendQueryString(url: string, queryBuilder?: QueryBuilder): string {
-    if(queryBuilder === undefined) {
+  private _appendQueryString(options: { url: string; query?: QueryBuilder }): string {
+    const { url, query } = options;
+
+    if(query === undefined) {
       return url;
     }
 
-    const params = queryBuilder.build();
-    const queryString = this._encoder.stringify(params);
-    
+    const params = query.build();
+    const queryString = this._encoder.stringify({ obj: params });
+
     return `${url}${queryString}`;
   }
 
@@ -147,15 +157,17 @@ export class HttpClient {
   * response body, and normalizes errors into
   * {@link PayloadError} instances.
   *
-  * @param {string} url - Fully resolved request URL.
-  * @param {RequestInit} config - Optional `fetch` configuration overrides.
+  * @param {string} options.url - Fully resolved request URL.
+  * @param {RequestInit} options.config - Optional `fetch` configuration overrides.
   *
   * @returns {Promise<Json | undefined>} Parsed JSON, or `undefined` for empty responses.
   *
   * @throws {PayloadError} On non-2xx responses.
   * @throws {Error} On network, parsing, or abort failures.
   */
-  private async _fetch(url: string, config: RequestInit = {}): Promise<Json | undefined> {    
+  private async _fetch(options: { url: string; config?: RequestInit }): Promise<Json | undefined> {
+    const { url, config = {} } = options;
+
     let response: Response;
     let text: string;
     let json: Json | undefined = undefined;
@@ -172,7 +184,7 @@ export class HttpClient {
     }
 
     if (this._auth) {
-      this._auth.applyTo(headers);
+      this._auth.applyTo({ headers });
     }
 
     try {
@@ -197,26 +209,26 @@ export class HttpClient {
       }
 
       return json;
-    } 
+    }
     catch (error: any) {
       let message: string = '[PayloadError] Fetch failed';
 
       if (error instanceof SyntaxError) {
         message = `[PayloadError] Failed to parse JSON response`;
-      } 
+      }
       else if (error instanceof TypeError) {
         message = `[PayloadError] Network failure or CORS issue`;
-      } 
+      }
       else if (error.name === 'AbortError') {
         message = `[PayloadError] Request was aborted or timed out`;
-      } 
+      }
       else if (error instanceof PayloadError) {
         throw error;
-      } 
+      }
       else if (error instanceof Error) {
         message = `[PayloadError] ${error.message}`;
       }
-    
+
       throw new Error(message, { cause: error });
     }
   }
@@ -231,8 +243,8 @@ export class HttpClient {
    */
   async find(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
-    const json = await this._fetch(url) ?? {};
+    const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
+    const json = await this._fetch({ url }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -249,8 +261,8 @@ export class HttpClient {
    */
   async findById(options: { slug: string; id: string; query?: QueryBuilder }): Promise<DocumentDTO> {
     const { slug, id, query } = options;
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`, query);
-    const json = await this._fetch(url) ?? {};
+    const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`, query });
+    const json = await this._fetch({ url }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -272,10 +284,10 @@ export class HttpClient {
 
     const config: RequestInit = {
       method: method,
-      body: file !== undefined ? FormDataBuilder.build(file, data) : JSON.stringify(data),
+      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -291,14 +303,14 @@ export class HttpClient {
    */
   async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
+    const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
     const method: HttpMethod = HttpMethod.DELETE;
 
     const config: RequestInit = {
       method: method,
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -321,7 +333,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -339,15 +351,15 @@ export class HttpClient {
    */
   async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IFileUpload }): Promise<PaginatedDocsDTO> {
     const { slug, data, query, file } = options;
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}`, query);
+    const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
     const method: HttpMethod = HttpMethod.PATCH;
 
     const config: RequestInit = {
       method: method,
-      body: file !== undefined ? FormDataBuilder.build(file, data) : JSON.stringify(data),
+      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -370,10 +382,10 @@ export class HttpClient {
 
     const config: RequestInit = {
       method: method,
-      body: file !== undefined ? FormDataBuilder.build(file, data) : JSON.stringify(data),
+      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -389,8 +401,8 @@ export class HttpClient {
    */
   async count(options: { slug: string; query?: QueryBuilder }): Promise<number> {
     const { slug, query } = options;
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/count`, query);
-    const json = await this._fetch(url) ?? {};
+    const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/count`, query });
+    const json = await this._fetch({ url }) ?? {};
     const dto = TotalDocsDTO.fromJson(json);
 
     return dto.totalDocs;
@@ -406,7 +418,7 @@ export class HttpClient {
   async findGlobal(options: { slug: string }): Promise<DocumentDTO> {
     const { slug } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
-    const json = await this._fetch(url) ?? {};
+    const json = await this._fetch({ url }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -430,7 +442,7 @@ export class HttpClient {
       body: JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = DocumentDTO.fromJson(json['result'] as Json ?? {});
 
     return dto;
@@ -446,8 +458,8 @@ export class HttpClient {
    */
   async findVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
-    const url = this._appendQueryString(`${this._baseUrl}/api/${encodeURIComponent(slug)}/versions`, query);
-    const json = await this._fetch(url) ?? {};
+    const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions`, query });
+    const json = await this._fetch({ url }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -464,7 +476,7 @@ export class HttpClient {
   async findVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const json = await this._fetch(url) ?? {};
+    const json = await this._fetch({ url }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -481,13 +493,13 @@ export class HttpClient {
   async restoreVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const method: HttpMethod = HttpMethod.POST; 
-    
+    const method: HttpMethod = HttpMethod.POST;
+
     const config: RequestInit = {
       method: method,
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -503,8 +515,8 @@ export class HttpClient {
    */
   async findGlobalVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
     const { slug, query } = options;
-    const url = this._appendQueryString(`${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions`, query);
-    const json = await this._fetch(url) ?? {};
+    const url = this._appendQueryString({ url: `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions`, query });
+    const json = await this._fetch({ url }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -521,7 +533,7 @@ export class HttpClient {
   async findGlobalVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const json = await this._fetch(url) ?? {};
+    const json = await this._fetch({ url }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -539,12 +551,12 @@ export class HttpClient {
     const { slug, id } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
     const method: HttpMethod = HttpMethod.POST;
-    
+
     const config: RequestInit = {
       method: method,
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -568,7 +580,7 @@ export class HttpClient {
       body: JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = LoginResultDTO.fromJson(json);
 
     return dto;
@@ -584,7 +596,7 @@ export class HttpClient {
   async me(options: { slug: string }): Promise<MeResultDTO> {
     const { slug } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/me`;
-    const json = await this._fetch(url) ?? {};
+    const json = await this._fetch({ url }) ?? {};
     const dto = MeResultDTO.fromJson(json);
 
     return dto;
@@ -606,7 +618,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = RefreshResultDTO.fromJson(json);
 
     return dto;
@@ -630,7 +642,7 @@ export class HttpClient {
       body: JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -654,7 +666,7 @@ export class HttpClient {
       body: JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = ResetPasswordResultDTO.fromJson(json);
 
     return dto;
@@ -677,7 +689,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -699,7 +711,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -723,7 +735,7 @@ export class HttpClient {
       body: JSON.stringify(data),
     };
 
-    const json = await this._fetch(url, config) ?? {};
+    const json = await this._fetch({ url, config }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;

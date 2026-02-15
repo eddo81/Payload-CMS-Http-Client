@@ -20,9 +20,11 @@ export class JoinClause implements IClause {
  /**
   * Creates a new JoinClause for a given join field.
   *
-  * @param {string} on - The name of the `Join Field` to join on (e.g. "relatedPosts").
+  * @param {string} options.on - The name of the `Join Field` to join on (e.g. "relatedPosts").
   */
-  constructor(on: string) {
+  constructor(options: { on: string }) {
+    const { on } = options;
+
     this.on = on;
   }
 
@@ -40,6 +42,9 @@ export class JoinClause implements IClause {
     if (this.count !== undefined) inner.count = this.count;
     if (this.where !== undefined) inner.where = this.where;
 
-    return { [this.on]: inner };
+    const result: Json = {};
+    result[this.on] = inner;
+
+    return result;
   }
 }

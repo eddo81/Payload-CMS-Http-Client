@@ -12,8 +12,10 @@ export class FileUpload implements IFileUpload {
   readonly mimeType: string | undefined;
 
   constructor(options: { content: Blob; filename: string; mimeType?: string }) {
-    this.content = options.content;
-    this.filename = options.filename;
-    this.mimeType = options.mimeType;
+    const { content, filename, mimeType } = options;
+
+    this.content = content;
+    this.filename = filename;
+    this.mimeType = mimeType;
   }
 }

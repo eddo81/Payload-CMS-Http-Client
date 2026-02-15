@@ -541,14 +541,16 @@ Implementations: `WhereClause`, `AndClause`, `OrClause`, `JoinClause`.
 ### IAuthCredential
 
 ```typescript
-// TypeScript
+// TypeScript -- options object wraps the single parameter
 export interface IAuthCredential {
-  applyTo(headers: Record<string, string>): void;
+  applyTo(options: { headers: Record<string, string> }): void;
 }
 ```
 
+> **Porting note**: The TS options object maps to a single named parameter in C#/Dart since there is only one parameter. No options class needed.
+
 ```csharp
-// C#
+// C# -- single named parameter (no options object needed)
 public interface IAuthCredential
 {
     void ApplyTo(Dictionary<string, string> headers);
@@ -556,7 +558,7 @@ public interface IAuthCredential
 ```
 
 ```dart
-// Dart
+// Dart -- single named parameter (no options object needed)
 abstract class IAuthCredential {
   void applyTo(Map<String, String> headers);
 }
@@ -639,9 +641,13 @@ for (final clause in _clauses) {
 **WhereClause** -- produces `{ field: { operator: value } }`:
 
 ```typescript
-// TypeScript
+// TypeScript -- explicit assignment (avoids computed property literals for portability)
 build(): Json {
-  return { [this.field]: { [this.operator]: this.value } };
+  const inner: Json = {};
+  inner[this._operator] = this._value;
+  const result: Json = {};
+  result[this._field] = inner;
+  return result;
 }
 ```
 
@@ -666,7 +672,9 @@ Map<String, dynamic> build() {
 **AndClause** -- produces `{ "and": [ clause.build(), ... ] }`:
 ```typescript
 build(): Json {
-  return { and: this.clauses.map(clause => clause.build()) };
+  const result: Json = {};
+  result['and'] = this._clauses.map(clause => clause.build());
+  return result;
 }
 ```
 
@@ -676,12 +684,14 @@ build(): Json {
 ```typescript
 build(): Json {
   const inner: Json = {};
-  if (this.limit !== undefined) inner.limit = this.limit;
-  if (this.page !== undefined) inner.page = this.page;
-  if (this.sort !== undefined) inner.sort = this.sort;
-  if (this.count !== undefined) inner.count = this.count;
-  if (this.where !== undefined) inner.where = this.where;
-  return { [this.on]: inner };
+  if (this._limit !== undefined) inner['limit'] = this._limit;
+  if (this._page !== undefined) inner['page'] = this._page;
+  if (this._sort !== undefined) inner['sort'] = this._sort;
+  if (this._count !== undefined) inner['count'] = this._count;
+  if (this._where !== undefined) inner['where'] = this._where;
+  const result: Json = {};
+  result[this._on] = inner;
+  return result;
 }
 ```
 
@@ -726,11 +736,12 @@ else
 `WhereBuilder.and()` and `WhereBuilder.or()` accept a callback that receives a fresh `WhereBuilder`. This also applies to `JoinBuilder.and()` / `JoinBuilder.or()`.
 
 ```typescript
-// TypeScript
-and(callback: (builder: WhereBuilder) => void): this {
+// TypeScript -- callback passed via options object
+and(options: { callback: (builder: WhereBuilder) => void }): this {
+  const { callback } = options;
   const builder = new WhereBuilder();
   callback(builder);
-  this._clauses.push(new AndClause(builder._clauses));
+  this._clauses.push(new AndClause({ clauses: builder._clauses }));
   return this;
 }
 ```
@@ -751,7 +762,7 @@ public WhereBuilder And(Action<WhereBuilder> callback)
 WhereBuilder and(void Function(WhereBuilder builder) callback) {
   final builder = WhereBuilder();
   callback(builder);
-  _clauses.add(AndClause(builder._clauses));
+  _clauses.add(AndClause(clauses: builder._clauses));
   return this;
 }
 ```
@@ -762,13 +773,14 @@ Note: `builder._clauses` is private field access from the same class. This works
 
 ## Section 9: File Upload
 
-`FormDataBuilder.build(file, data)` creates a `FormData` with:
+`FormDataBuilder.build(options)` creates a `FormData` with:
 - `file` field: the binary content as a `Blob`, with optional MIME type override
 - `_payload` field: `JSON.stringify(data)` (the document data as a JSON string)
 
 **TypeScript** (`lib/internal/upload/FormDataBuilder.ts`):
 ```typescript
-static build(file: IFileUpload, data: Json): FormData {
+static build(options: { file: IFileUpload; data: Json }): FormData {
+  const { file, data } = options;
   const formData = new FormData();
   const blob = (file.mimeType !== undefined)
     ? new Blob([file.content], { type: file.mimeType })
@@ -823,10 +835,11 @@ export class PayloadError extends Error {
   public readonly response?: Response;
 
   constructor(options: { statusCode: number; message?: string; response?: Response; cause?: unknown }) {
-    super(data.message, { cause: data.cause });
+    const { statusCode, message, response, cause } = options;
+    super(message, { cause });
     this.name = 'PayloadError';
-    this.statusCode = data.statusCode;
-    this.response = data.response;
+    this.statusCode = statusCode;
+    this.response = response;
     Object.setPrototypeOf(this, PayloadError.prototype);
   }
 }
@@ -992,11 +1005,12 @@ Different HttpClient methods unwrap the JSON response differently. This must be 
 
 **TypeScript:**
 ```typescript
-private _getOrCreateClause(on: string): JoinClause | undefined {
+private _getOrCreateClause(options: { on: string }): JoinClause | undefined {
+  const { on } = options;
   if (on === '') return undefined;
   let clause = this._clauses.find((clause) => clause.on === on);
   if (clause === undefined) {
-    clause = new JoinClause(on);
+    clause = new JoinClause({ on });
     this._clauses.push(clause);
   }
   return clause;
@@ -1055,19 +1069,19 @@ TypeScript uses `Blob` for file content. C# uses `byte[]` and Dart uses `List<in
 
 ### Constructor Pattern
 
-`ApiKeyAuth` and `JwtAuth` use positional constructor parameters (not inline options) because they have 1-2 required parameters with no optional ones. This is the one exception to the inline options rule -- use positional parameters when there are only required params and the count is small.
+ALL constructors use the inline options object pattern, with no exceptions. This includes `ApiKeyAuth` and `JwtAuth`, which were previously positional but have been updated for consistency.
 
 ```typescript
-// ApiKeyAuth -- positional (2 required, 0 optional)
-constructor(collectionSlug: string, apiKey: string)
+// ApiKeyAuth -- inline options
+constructor(options: { collectionSlug: string; apiKey: string })
 
-// JwtAuth -- positional (1 required, 0 optional)
-constructor(token: string)
+// JwtAuth -- inline options
+constructor(options: { token: string })
 
-// HttpClient -- inline options (1 required, 2 optional)
+// HttpClient -- inline options
 constructor(options: { baseUrl: string; headers?: Record<string, string>; auth?: IAuthCredential })
 
-// FileUpload -- inline options (2 required, 1 optional)
+// FileUpload -- inline options
 constructor(options: { content: Blob; filename: string; mimeType?: string })
 ```
 

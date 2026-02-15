@@ -44,7 +44,7 @@ new HttpClient(options: {
 Replaces custom headers included with every request.
 
 ```typescript
-setHeaders(headers: Record<string, string>): void
+setHeaders(options: { headers: Record<string, string> }): void
 ```
 
 ### Set auth
@@ -52,7 +52,7 @@ setHeaders(headers: Record<string, string>): void
 Sets or clears the authentication credential.
 
 ```typescript
-setAuth(auth?: IAuthCredential): void
+setAuth(options: { auth?: IAuthCredential }): void
 ```
 
 ---
@@ -225,7 +225,7 @@ async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IF
 #### Example
 ```typescript
 const query = new QueryBuilder()
-  .where('status', Operator.Equals, 'draft');
+  .where({ field: 'status', operator: Operator.Equals, value: 'draft' });
 
 const result: PaginatedDocsDTO = await httpClient.update({
   slug: 'posts',
@@ -272,7 +272,7 @@ async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedD
 #### Example
 ```typescript
 const query = new QueryBuilder()
-  .where('status', Operator.Equals, 'archived');
+  .where({ field: 'status', operator: Operator.Equals, value: 'archived' });
 
 const result: PaginatedDocsDTO = await httpClient.delete({
   slug: 'posts',
@@ -519,7 +519,7 @@ const loginResult: LoginResultDTO = await httpClient.login({
 });
 
 // Set the token on the client
-httpClient.setAuth(new JwtAuth(loginResult.token));
+httpClient.setAuth({ auth: new JwtAuth({ token: loginResult.token }) });
 
 // Authenticated requests now include the Bearer token
 const me: MeResultDTO = await httpClient.me({ slug: 'users' });
@@ -533,7 +533,7 @@ import { HttpClient, ApiKeyAuth } from 'payload-cms-http-client';
 
 const httpClient = new HttpClient({
   baseUrl: 'http://localhost:3000',
-  auth: new ApiKeyAuth('users', 'your-api-key-here'),
+  auth: new ApiKeyAuth({ collectionSlug: 'users', apiKey: 'your-api-key-here' }),
 });
 ```
 
@@ -542,7 +542,7 @@ const httpClient = new HttpClient({
 Sets the `Authorization` header to `{slug} API-Key {key}`.
 
 ```typescript
-new ApiKeyAuth(collectionSlug: string, apiKey: string)
+new ApiKeyAuth(options: { collectionSlug: string; apiKey: string })
 ```
 
 #### JwtAuth
@@ -550,7 +550,7 @@ new ApiKeyAuth(collectionSlug: string, apiKey: string)
 Sets the `Authorization` header to `Bearer {token}`.
 
 ```typescript
-new JwtAuth(token: string)
+new JwtAuth(options: { token: string })
 ```
 
 Both implement `IAuthCredential` and can be passed to the `HttpClient` constructor or `setAuth()`.
@@ -733,10 +733,10 @@ Fluent builder for query parameters. All methods return `this` for chaining.
 import { QueryBuilder, Operator } from 'payload-cms-http-client';
 
 const query = new QueryBuilder()
-  .where('status', Operator.Equals, 'published')
-  .sort('createdAt')
-  .limit(10)
-  .page(2);
+  .where({ field: 'status', operator: Operator.Equals, value: 'published' })
+  .sort({ field: 'createdAt' })
+  .limit({ value: 10 })
+  .page({ value: 2 });
 
 const result = await httpClient.find({ slug: 'posts', query: query });
 
@@ -745,19 +745,19 @@ const result = await httpClient.find({ slug: 'posts', query: query });
 
 | Method | Parameters | Description |
 |--------|-----------|-------------|
-| `limit` | `value: number` | Maximum documents per page. |
-| `page` | `value: number` | Page number. |
-| `sort` | `field: string` | Sort ascending by field. |
-| `sortByDescending` | `field: string` | Sort descending by field. |
-| `depth` | `value: number` | Population depth for relationships. |
-| `locale` | `value: string` | Locale for localized fields. |
-| `fallbackLocale` | `value: string` | Fallback locale. |
-| `select` | `fields: string[]` | Fields to include in response. |
-| `populate` | `fields: string[]` | Relationships to populate. |
-| `where` | `field, operator, value` | Add a where condition. |
-| `and` | `callback: (WhereBuilder) => void` | Nested AND group. |
-| `or` | `callback: (WhereBuilder) => void` | Nested OR group. |
-| `join` | `callback: (JoinBuilder) => void` | Configure joins. |
+| `limit` | `options: { value: number }` | Maximum documents per page. |
+| `page` | `options: { value: number }` | Page number. |
+| `sort` | `options: { field: string }` | Sort ascending by field. |
+| `sortByDescending` | `options: { field: string }` | Sort descending by field. |
+| `depth` | `options: { value: number }` | Population depth for relationships. |
+| `locale` | `options: { value: string }` | Locale for localized fields. |
+| `fallbackLocale` | `options: { value: string }` | Fallback locale. |
+| `select` | `options: { fields: string[] }` | Fields to include in response. |
+| `populate` | `options: { fields: string[] }` | Relationships to populate. |
+| `where` | `options: { field, operator, value }` | Add a where condition. |
+| `and` | `options: { callback: (WhereBuilder) => void }` | Nested AND group. |
+| `or` | `options: { callback: (WhereBuilder) => void }` | Nested OR group. |
+| `join` | `options: { callback: (JoinBuilder) => void }` | Configure joins. |
 
 ### WhereBuilder
 
@@ -766,12 +766,12 @@ Used inside `and()` and `or()` callbacks to compose nested where clauses.
 #### Example
 ```typescript
 const query = new QueryBuilder()
-  .where('status', Operator.Equals, 'published')
-  .or((builder) => {
+  .where({ field: 'status', operator: Operator.Equals, value: 'published' })
+  .or({ callback: (builder) => {
     builder
-      .where('category', Operator.Equals, 'news')
-      .where('category', Operator.Equals, 'blog');
-  });
+      .where({ field: 'category', operator: Operator.Equals, value: 'news' })
+      .where({ field: 'category', operator: Operator.Equals, value: 'blog' });
+  }});
 
 const result = await httpClient.find({ slug: 'posts', query: query });
 
@@ -783,19 +783,19 @@ Nested AND groups work the same way:
 #### Example
 ```typescript
 const query = new QueryBuilder()
-  .where('status', Operator.Equals, 'published')
-  .and((builder) => {
+  .where({ field: 'status', operator: Operator.Equals, value: 'published' })
+  .and({ callback: (builder) => {
     builder
-      .where('views', Operator.GreaterThan, 100)
-      .where('featured', Operator.Equals, true);
-  });
+      .where({ field: 'views', operator: Operator.GreaterThan, value: 100 })
+      .where({ field: 'featured', operator: Operator.Equals, value: true });
+  }});
 ```
 
 | Method | Parameters | Description |
 |--------|-----------|-------------|
-| `where` | `field, operator, value` | Add a where condition. |
-| `and` | `callback: (WhereBuilder) => void` | Nested AND group. |
-| `or` | `callback: (WhereBuilder) => void` | Nested OR group. |
+| `where` | `options: { field, operator, value }` | Add a where condition. |
+| `and` | `options: { callback: (WhereBuilder) => void }` | Nested AND group. |
+| `or` | `options: { callback: (WhereBuilder) => void }` | Nested OR group. |
 
 ### JoinBuilder
 
@@ -804,26 +804,26 @@ Used inside the `join()` callback to configure relationship joins.
 #### Example
 ```typescript
 const query = new QueryBuilder()
-  .join((join) => {
+  .join({ callback: (join) => {
     join
-      .limit('comments', 5)
-      .sort('comments', 'createdAt')
-      .where('comments', 'status', Operator.Equals, 'approved');
-  });
+      .limit({ on: 'comments', value: 5 })
+      .sort({ on: 'comments', field: 'createdAt' })
+      .where({ on: 'comments', field: 'status', operator: Operator.Equals, value: 'approved' });
+  }});
 
 const result = await httpClient.find({ slug: 'posts', query: query });
 ```
 
 | Method | Parameters | Description |
 |--------|-----------|-------------|
-| `limit` | `on, value` | Limit documents for a join field. |
-| `page` | `on, page` | Page number for a join field. |
-| `sort` | `on, field` | Sort ascending by field. |
-| `sortByDescending` | `on, field` | Sort descending by field. |
-| `count` | `on, value?` | Enable/disable counting. |
-| `where` | `on, field, operator, value` | Where condition on a join field. |
-| `and` | `on, callback` | Nested AND group on a join field. |
-| `or` | `on, callback` | Nested OR group on a join field. |
+| `limit` | `options: { on, value }` | Limit documents for a join field. |
+| `page` | `options: { on, value }` | Page number for a join field. |
+| `sort` | `options: { on, field }` | Sort ascending by field. |
+| `sortByDescending` | `options: { on, field }` | Sort descending by field. |
+| `count` | `options: { on, value? }` | Enable/disable counting. |
+| `where` | `options: { on, field, operator, value }` | Where condition on a join field. |
+| `and` | `options: { on, callback }` | Nested AND group on a join field. |
+| `or` | `options: { on, callback }` | Nested OR group on a join field. |
 | `disable` | — | Disable all joins. |
 | `isDisabled` | — | (getter) Whether joins are disabled. |
 

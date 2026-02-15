@@ -10,11 +10,15 @@ import type { IAuthCredential } from "../../internal/contracts/IAuthCredential.j
 export class JwtAuth implements IAuthCredential {
   private readonly _token: string;
 
-  constructor(token: string) {
+  constructor(options: { token: string }) {
+    const { token } = options;
+
     this._token = token;
   }
 
-  applyTo(headers: Record<string, string>): void {
+  applyTo(options: { headers: Record<string, string> }): void {
+    const { headers } = options;
+
     headers['Authorization'] = `Bearer ${this._token}`;
   }
 }

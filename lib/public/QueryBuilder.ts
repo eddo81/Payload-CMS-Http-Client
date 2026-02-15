@@ -25,11 +25,13 @@ export class QueryBuilder {
   /**
    * Limits the number of documents returned.
    *
-   * @param {number} value - Maximum document count.
+   * @param {number} options.value - Maximum document count.
    *
    * @returns {this} The current builder for chaining.
    */
-  limit(value: number): this {
+  limit(options: { value: number }): this {
+    const { value } = options;
+
     this._limit = value;
 
     return this;
@@ -38,11 +40,13 @@ export class QueryBuilder {
   /**
    * Sets the page of results to retrieve (1-based).
    *
-   * @param {number} value - The page number.
+   * @param {number} options.value - The page number.
    *
    * @returns {this} The current builder for chaining.
    */
-  page(value: number): this {
+  page(options: { value: number }): this {
+    const { value } = options;
+
     this._page = value;
 
     return this;
@@ -53,14 +57,16 @@ export class QueryBuilder {
    *
    * Can be called multiple times for multi-field sorts.
    *
-   * @param {string} field - The field name to sort by.
+   * @param {string} options.field - The field name to sort by.
    *
    * @returns {this} The current builder for chaining.
    */
-  sort(field: string): this {
+  sort(options: { field: string }): this {
+    const { field } = options;
+
     if (!this._sort) {
       this._sort = field;
-    } 
+    }
     else {
       this._sort += `,${field}`;
     }
@@ -73,24 +79,27 @@ export class QueryBuilder {
    *
    * Automatically prefixes the field with `-` if needed.
    *
-   * @param {string} field - The field name to sort by.
+   * @param {string} options.field - The field name to sort by.
    *
    * @returns {this} The current builder for chaining.
    */
-  sortByDescending(field: string): this {
+  sortByDescending(options: { field: string }): this {
+    const { field } = options;
     const _field = field.startsWith('-') ? field : `-${field}`;
 
-    return this.sort(_field);
+    return this.sort({ field: _field });
   }
 
   /**
    * Sets the population `depth` for related documents.
    *
-   * @param {number} value - Depth level (0 = none, 1 = direct, etc.).
+   * @param {number} options.value - Depth level (0 = none, 1 = direct, etc.).
    *
    * @returns {this} The current builder for chaining.
    */
-  depth(value: number): this {
+  depth(options: { value: number }): this {
+    const { value } = options;
+
     this._depth = value;
 
     return this;
@@ -99,11 +108,13 @@ export class QueryBuilder {
   /**
    * Sets the `locale` for querying localized fields.
    *
-   * @param {string} value - A locale string (e.g. `'en'`, `'sv'`).
+   * @param {string} options.value - A locale string (e.g. `'en'`, `'sv'`).
    *
    * @returns {this} The current builder for chaining.
    */
-  locale(value: string): this {
+  locale(options: { value: string }): this {
+    const { value } = options;
+
     this._locale = value;
 
     return this;
@@ -112,11 +123,13 @@ export class QueryBuilder {
   /**
    * Sets a `fallback locale` when localized values are missing.
    *
-   * @param {string} value - A fallback locale string (e.g. `'en'`).
+   * @param {string} options.value - A fallback locale string (e.g. `'en'`).
    *
    * @returns {this} The current builder for chaining.
    */
-  fallbackLocale(value: string): this {
+  fallbackLocale(options: { value: string }): this {
+    const { value } = options;
+
     this._fallbackLocale = value;
 
     return this;
@@ -128,14 +141,16 @@ export class QueryBuilder {
    * Supports dot notation for nested selections
    * (e.g. `['title', 'author.name']`).
    *
-   * @param {string[]} fields - Field names to include.
+   * @param {string[]} options.fields - Field names to include.
    *
    * @returns {this} The current builder for chaining.
    */
-  select(fields: string[]): this {
+  select(options: { fields: string[] }): this {
+    const { fields } = options;
+
     if (!this._select) {
       this._select = fields.join(',');
-    } 
+    }
     else {
       this._select += `,${fields.join(',')}`;
     }
@@ -146,11 +161,13 @@ export class QueryBuilder {
   /**
    * Flags top-level `relationship` fields for population.
    *
-   * @param {string[]} fields - Relationship field names to populate.
+   * @param {string[]} options.fields - Relationship field names to populate.
    *
    * @returns {this} The current builder for chaining.
    */
-  populate(fields: string[]): this {
+  populate(options: { fields: string[] }): this {
+    const { fields } = options;
+
     this._populate = fields.join(',');
 
     return this;
@@ -161,14 +178,14 @@ export class QueryBuilder {
    *
    * Delegates to the internal {@link WhereBuilder}.
    *
-   * @param {string} field - The field name.
-   * @param {Operator} operator - The comparison operator.
-   * @param {JsonValue} value - The value to compare against.
+   * @param {string} options.field - The field name.
+   * @param {Operator} options.operator - The comparison operator.
+   * @param {JsonValue} options.value - The value to compare against.
    *
    * @returns {this} The current builder for chaining.
    */
-  where(field: string, operator: Operator, value: JsonValue): this {
-    this._whereBuilder.where(field, operator, value);
+  where(options: { field: string; operator: Operator; value: JsonValue }): this {
+    this._whereBuilder.where(options);
 
     return this;
   }
@@ -178,12 +195,12 @@ export class QueryBuilder {
    *
    * Delegates to a fresh {@link WhereBuilder} via callback.
    *
-   * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+   * @param {Function} options.callback - Receives a {@link WhereBuilder} for nested conditions.
    *
    * @returns {this} The current builder for chaining.
    */
-  and(callback: (builder: WhereBuilder) => void): this {
-    this._whereBuilder.and(callback);
+  and(options: { callback: (builder: WhereBuilder) => void }): this {
+    this._whereBuilder.and(options);
 
     return this;
   }
@@ -193,12 +210,12 @@ export class QueryBuilder {
    *
    * Delegates to a fresh {@link WhereBuilder} via callback.
    *
-   * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+   * @param {Function} options.callback - Receives a {@link WhereBuilder} for nested conditions.
    *
    * @returns {this} The current builder for chaining.
    */
-  or(callback: (builder: WhereBuilder) => void): this {
-    this._whereBuilder.or(callback);
+  or(options: { callback: (builder: WhereBuilder) => void }): this {
+    this._whereBuilder.or(options);
 
     return this;
   }
@@ -209,18 +226,13 @@ export class QueryBuilder {
    * Delegates to the internal {@link JoinBuilder} for
    * filtering, sorting, and limiting joined data.
    *
-   * @param {Function} callback - Receives the {@link JoinBuilder} instance.
+   * @param {Function} options.callback - Receives the {@link JoinBuilder} instance.
    *
    * @returns {this} The current builder for chaining.
-   *
-   * @example
-   * query.join(j => {
-   *   j.where('posts', 'author', 'equals', 'Alice')
-   *    .sortByDescending('posts', 'title')
-   *    .limit('posts', 1);
-   * });
    */
-  join(callback: (builder: JoinBuilder) => void): this {
+  join(options: { callback: (builder: JoinBuilder) => void }): this {
+    const { callback } = options;
+
     callback(this._joinBuilder);
 
     return this;

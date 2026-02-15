@@ -11,12 +11,13 @@ export class FormDataBuilder {
   /**
    * Builds a FormData instance from a file and document data.
    *
-   * @param {IFileUpload} file - The file to upload.
-   * @param {Json} data - The document data to include alongside the file.
+   * @param {IFileUpload} options.file - The file to upload.
+   * @param {Json} options.data - The document data to include alongside the file.
    *
    * @returns {FormData} A FormData object ready to be used as a request body.
    */
-  static build(file: IFileUpload, data: Json): FormData {
+  static build(options: { file: IFileUpload; data: Json }): FormData {
+    const { file, data } = options;
     const formData = new FormData();
 
     const blob = (file.mimeType !== undefined) ? new Blob([file.content], { type: file.mimeType }) : file.content;

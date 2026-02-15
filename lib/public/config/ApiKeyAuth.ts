@@ -12,12 +12,16 @@ export class ApiKeyAuth implements IAuthCredential {
   private readonly _collectionSlug: string;
   private readonly _apiKey: string;
 
-  constructor(collectionSlug: string, apiKey: string) {
+  constructor(options: { collectionSlug: string; apiKey: string }) {
+    const { collectionSlug, apiKey } = options;
+
     this._collectionSlug = collectionSlug;
     this._apiKey = apiKey;
   }
 
-  applyTo(headers: Record<string, string>): void {
+  applyTo(options: { headers: Record<string, string> }): void {
+    const { headers } = options;
+
     headers['Authorization'] = `${this._collectionSlug} API-Key ${this._apiKey}`;
   }
 }

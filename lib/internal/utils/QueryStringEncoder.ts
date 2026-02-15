@@ -16,8 +16,10 @@ export class QueryStringEncoder {
   * @param {boolean} [options.strictEncoding=false] - Keep brackets and commas percent-encoded.
   */
   public constructor(options?: { addQueryPrefix?: boolean; strictEncoding?: boolean }) {
-    this._addQueryPrefix = options?.addQueryPrefix ?? true;
-    this._strictEncoding = options?.strictEncoding ?? false;
+    const { addQueryPrefix, strictEncoding } = options ?? {};
+
+    this._addQueryPrefix = addQueryPrefix ?? true;
+    this._strictEncoding = strictEncoding ?? false;
   }
 
   private get _prefix(): string {
@@ -27,12 +29,13 @@ export class QueryStringEncoder {
   /**
    * Converts an object into a Payload-compatible query string.
    *
-   * @param {Record<string, unknown>} obj - The object to serialize.
+   * @param {Record<string, unknown>} options.obj - The object to serialize.
    *
    * @returns {string} The query string (prefixed with `?`), or empty string.
    */
-  public stringify(obj: Record<string, unknown>): string {
-    const result = this._serialize(obj, '') ?? '';
+  public stringify(options: { obj: Record<string, unknown> }): string {
+    const { obj } = options;
+    const result = this._serialize({ obj, parentKey: '' }) ?? '';
 
     if (result === '') {
       return '';
@@ -47,11 +50,12 @@ export class QueryStringEncoder {
    * Preserves `[]` and `,` which are meaningful
    * to Payload CMS query syntax.
    *
-   * @param {string} value - The string to encode.
+   * @param {string} options.value - The string to encode.
    *
    * @returns {string} The encoded string.
    */
-  private _safeEncode(value: string): string {
+  private _safeEncode(options: { value: string }): string {
+    const { value } = options;
     const encoded = encodeURIComponent(value);
 
     if (this._strictEncoding) {
@@ -67,12 +71,13 @@ export class QueryStringEncoder {
   /**
    * Recursively serializes an object into query string segments.
    *
-   * @param {Record<string, unknown>} obj - The object to serialize.
-   * @param {string} parentKey - The accumulated key path (e.g. `where[title]`).
+   * @param {Record<string, unknown>} options.obj - The object to serialize.
+   * @param {string} options.parentKey - The accumulated key path (e.g. `where[title]`).
    *
    * @returns {string | null} A query string fragment, or `null` if empty.
    */
-  private _serialize(obj: Record<string, unknown>, parentKey: string): string | null {
+  private _serialize(options: { obj: Record<string, unknown>; parentKey: string }): string | null {
+    const { obj, parentKey } = options;
     const segments: string[] = [];
 
     // Return early when hitting a non-object.
@@ -87,24 +92,24 @@ export class QueryStringEncoder {
       }
 
       // Build the current key path, preserving bracket notation.
-      const _key = (parentKey) ? `${parentKey}[${this._safeEncode(key)}]` : this._safeEncode(key);
+      const _key = (parentKey) ? `${parentKey}[${this._safeEncode({ value: key })}]` : this._safeEncode({ value: key });
 
-      const encoded: string | null = this._isPrimitive(value) ? this._serializePrimitive(_key, value) : null;
+      const encoded: string | null = this._isPrimitive({ value }) ? this._serializePrimitive({ key: _key, value }) : null;
 
       // Handle primitive values first — these are terminal nodes in the structure.
       // Early continue ensures minimal nesting and clearer control flow.
-      if (encoded) { 
+      if (encoded) {
         segments.push(encoded);
         continue;
       }
 
       // Handle arrays recursively.
       if (Array.isArray(value)) {
-        this._serializeArray(value, _key, segments);
+        this._serializeArray({ arr: value, parentKey: _key, segments });
         continue;
       }
 
-      const nested: string | null = this._isPlainObject(value) ? this._serialize(value, _key) : null;
+      const nested: string | null = this._isPlainObject({ value }) ? this._serialize({ obj: value as Record<string, unknown>, parentKey: _key }) : null;
 
       // Recursively serialize nested objects into query segments.
       if (nested) {
@@ -121,42 +126,48 @@ export class QueryStringEncoder {
   /**
    * Determines whether the value is a plain object.
    *
-   * @param {unknown} value - The value to inspect.
+   * @param {unknown} options.value - The value to inspect.
    *
    * @returns {boolean} `true` if a plain object, `false` otherwise.
    */
-  private _isPlainObject(value: unknown): value is Record<string, unknown> {
+  private _isPlainObject(options: { value: unknown }): options is { value: Record<string, unknown> } {
+    const { value } = options;
+
     return typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date);
   }
 
   /**
    * Determines whether the value is a serializable primitive.
    *
-   * @param {unknown} value - The value to inspect.
+   * @param {unknown} options.value - The value to inspect.
    *
    * @returns {boolean} `true` if serializable, `false` otherwise.
    */
-  private _isPrimitive(value: unknown): boolean {
+  private _isPrimitive(options: { value: unknown }): boolean {
+    const { value } = options;
+
     return (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value instanceof Date);
   }
 
   /**
    * Serializes an array using index-based notation.
    *
-   * @param {unknown[]} arr - The array to serialize.
-   * @param {string} parentKey - The current key path (e.g. `where[tags]`).
-   * @param {string[]} segments - The accumulated query segments.
+   * @param {unknown[]} options.arr - The array to serialize.
+   * @param {string} options.parentKey - The current key path (e.g. `where[tags]`).
+   * @param {string[]} options.segments - The accumulated query segments.
    */
-  private _serializeArray(arr: unknown[], parentKey: string, segments: string[]): void {
+  private _serializeArray(options: { arr: unknown[]; parentKey: string; segments: string[] }): void {
+    const { arr, parentKey, segments } = options;
+
     for (let i = 0; i < arr.length; i++) {
       const value = arr[i];
       const elementKey = `${parentKey}[${i}]`;
 
       if (value === undefined || value === null) {
         continue;
-      } 
+      }
 
-      const encoded: string | null = this._isPrimitive(value) ? this._serializePrimitive(elementKey, value) : null;
+      const encoded: string | null = this._isPrimitive({ value }) ? this._serializePrimitive({ key: elementKey, value }) : null;
 
       // Handle primitive values first — these are terminal nodes in the structure.
       // Early continue ensures minimal nesting and clearer control flow.
@@ -167,16 +178,16 @@ export class QueryStringEncoder {
 
       // Handle arrays recursively.
       if (Array.isArray(value)) {
-        this._serializeArray(value, elementKey, segments);
+        this._serializeArray({ arr: value, parentKey: elementKey, segments });
         continue;
       }
 
-      const nested: string | null = this._isPlainObject(value) ? this._serialize(value, elementKey) : null;
-      
+      const nested: string | null = this._isPlainObject({ value }) ? this._serialize({ obj: value as Record<string, unknown>, parentKey: elementKey }) : null;
+
       // Recursively serialize nested objects into query segments.
       if (nested) {
           segments.push(nested);
-          continue; 
+          continue;
       }
 
       // Skips unsupported types (symbol, bigint, function)
@@ -186,20 +197,22 @@ export class QueryStringEncoder {
   /**
    * Serializes a primitive into a `key=value` pair.
    *
-   * @param {string} key - The full key path (e.g. `where[title][equals]`).
-   * @param {unknown} value - The primitive value to encode.
+   * @param {string} options.key - The full key path (e.g. `where[title][equals]`).
+   * @param {unknown} options.value - The primitive value to encode.
    *
    * @returns {string | null} A `key=value` string, or `null` if unsupported.
    */
-  private _serializePrimitive(key: string, value: unknown): string | null {
+  private _serializePrimitive(options: { key: string; value: unknown }): string | null {
+    const { key, value } = options;
+
     if (typeof value === 'symbol' || typeof value === 'bigint') {
       return null;
     }
 
     if (value instanceof Date) {
-      return `${key}=${this._safeEncode(value.toISOString())}`;
+      return `${key}=${this._safeEncode({ value: value.toISOString() })}`;
     }
 
-    return `${key}=${this._safeEncode(String(value))}`;
+    return `${key}=${this._safeEncode({ value: String(value) })}`;
   }
 }

@@ -33,7 +33,7 @@ lib/                       # 1:1 portable — every file has a C#/Dart equivalen
 │   ├── contracts/         # Internal interfaces (IClause, IAuthCredential, IFileUpload)
 │   ├── upload/            # FormDataBuilder
 │   └── utils/             # Utilities (QueryStringEncoder)
-└── index.ts               # Barrel export
+index.ts                       # Barrel export (project root, not inside lib/)
 ```
 
 ## Key Design Principles
@@ -62,7 +62,7 @@ lib/                       # 1:1 portable — every file has a C#/Dart equivalen
 
 ### Inline Option Types (Portability Pattern)
 
-For methods with multiple parameters, use a single inline object type in TypeScript:
+All methods (public, private, and interface) use a single inline object type in TypeScript:
 
 ```typescript
 // TypeScript - inline object type, no separate interface file
@@ -110,8 +110,9 @@ Used in `JoinBuilder` for both `JoinClause` and `WhereBuilder` caching. If a thi
 `IClause` implementations (`WhereClause`, `AndClause`, `OrClause`, `JoinClause`) each have a `build(): Json` method for serialization.
 
 ### Authentication
-`IAuthCredential` interface with `applyTo(headers)` method. Concrete implementations:
+`IAuthCredential` interface with `applyTo(options: { headers })` method. Concrete implementations:
 - `ApiKeyAuth`: `{slug} API-Key {key}` format
+- `JwtAuth`: `Bearer {token}` format
 
 ## Testing
 

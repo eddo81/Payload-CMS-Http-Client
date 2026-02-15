@@ -1,4 +1,4 @@
-import * as lib from '../lib/index.ts';
+import * as lib from '../index.ts';
 import { TestHarness } from './TestHarness.ts';
 
 const harness = new TestHarness();
@@ -46,7 +46,7 @@ harness.add('find() should return a paginated list containing the post', async (
 
   const result = await client.find({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('title', lib.Operator.Equals, 'Integration Test Post'),
+    query: new lib.QueryBuilder().where({ field: 'title', operator: lib.Operator.Equals, value: 'Integration Test Post' }),
   });
 
   TestHarness.assertTrue(result.totalDocs >= 1);
@@ -59,7 +59,7 @@ harness.add('count() should return the correct document count', async () => {
 
   const total = await client.count({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('title', lib.Operator.Equals, 'Integration Test Post'),
+    query: new lib.QueryBuilder().where({ field: 'title', operator: lib.Operator.Equals, value: 'Integration Test Post' }),
   });
 
   TestHarness.assertTrue(total >= 1);
@@ -72,7 +72,7 @@ harness.add('find() with limit should constrain returned documents', async () =>
 
   const result = await client.find({
     slug: 'posts',
-    query: new lib.QueryBuilder().limit(1),
+    query: new lib.QueryBuilder().limit({ value: 1 }),
   });
 
   TestHarness.assertEqual(result.limit, 1);
@@ -84,7 +84,7 @@ harness.add('find() with page should return the specified page', async () => {
 
   const result = await client.find({
     slug: 'posts',
-    query: new lib.QueryBuilder().limit(1).page(1),
+    query: new lib.QueryBuilder().limit({ value: 1 }).page({ value: 1 }),
   });
 
   TestHarness.assertEqual(result.page, 1);
@@ -96,7 +96,7 @@ harness.add('find() with sort should accept sort parameter', async () => {
 
   const result = await client.find({
     slug: 'posts',
-    query: new lib.QueryBuilder().sortByDescending('createdAt'),
+    query: new lib.QueryBuilder().sortByDescending({ field: 'createdAt' }),
   });
 
   TestHarness.assertTrue(result.docs.length >= 1);
@@ -124,7 +124,7 @@ harness.add('update() bulk should update matching posts', async () => {
   const result = await client.update({
     slug: 'posts',
     data: { published: false },
-    query: new lib.QueryBuilder().where('title', lib.Operator.Equals, 'Integration Test Post'),
+    query: new lib.QueryBuilder().where({ field: 'title', operator: lib.Operator.Equals, value: 'Integration Test Post' }),
   });
 
   TestHarness.assertTrue(result.docs.length >= 1);
@@ -138,7 +138,7 @@ harness.add('findVersions() should return versions for the post collection', asy
 
   const result = await client.findVersions({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('parent', lib.Operator.Equals, createdPostId),
+    query: new lib.QueryBuilder().where({ field: 'parent', operator: lib.Operator.Equals, value: createdPostId }),
   });
 
   TestHarness.assertTrue(result.totalDocs >= 1);
@@ -247,7 +247,7 @@ harness.add('login() should authenticate and return a token', async () => {
 harness.add('me() should return the authenticated user', async () => {
   const client = new lib.HttpClient({
     baseUrl: BASE_URL,
-    auth: new lib.JwtAuth(loginToken),
+    auth: new lib.JwtAuth({ token: loginToken }),
   });
 
   const result = await client.me({ slug: 'users' });
@@ -260,7 +260,7 @@ harness.add('me() should return the authenticated user', async () => {
 harness.add('refreshToken() should return a new token', async () => {
   const client = new lib.HttpClient({
     baseUrl: BASE_URL,
-    auth: new lib.JwtAuth(loginToken),
+    auth: new lib.JwtAuth({ token: loginToken }),
   });
 
   const result = await client.refreshToken({ slug: 'users' });
@@ -290,7 +290,7 @@ harness.add('logout() should return a message', async () => {
     data: { email: TEST_EMAIL, password: TEST_PASSWORD },
   });
 
-  client.setAuth(new lib.JwtAuth(loginResult.token));
+  client.setAuth({ auth: new lib.JwtAuth({ token: loginResult.token }) });
 
   const result = await client.logout({ slug: 'users' });
 
@@ -341,7 +341,7 @@ harness.add('setAuth() should enable auth after construction', async () => {
   TestHarness.assertEqual(before.user.id, '');
 
   // After setting auth, me() returns the authenticated user
-  client.setAuth(new lib.JwtAuth(loginToken));
+  client.setAuth({ auth: new lib.JwtAuth({ token: loginToken }) });
   const after = await client.me({ slug: 'users' });
 
   TestHarness.assertTrue(after.user.id !== '');
@@ -437,7 +437,7 @@ harness.add('PayloadError should expose statusCode and cause from failed request
 harness.add('ApiKeyAuth should authenticate and allow creating a post', async () => {
   const client = new lib.HttpClient({
     baseUrl: BASE_URL,
-    auth: new lib.ApiKeyAuth('users', TEST_API_KEY),
+    auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }),
   });
 
   const result = await client.create({
@@ -452,7 +452,7 @@ harness.add('ApiKeyAuth should authenticate and allow creating a post', async ()
 harness.add('ApiKeyAuth should authenticate and allow reading via me()', async () => {
   const client = new lib.HttpClient({
     baseUrl: BASE_URL,
-    auth: new lib.ApiKeyAuth('users', TEST_API_KEY),
+    auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }),
   });
 
   const result = await client.me({ slug: 'users' });
@@ -564,7 +564,7 @@ harness.add('request() GET with query should append query string', async () => {
   const result = await client.request({
     method: lib.HttpMethod.GET,
     path: '/api/posts',
-    query: new lib.QueryBuilder().where('title', lib.Operator.Contains, 'request'),
+    query: new lib.QueryBuilder().where({ field: 'title', operator: lib.Operator.Contains, value: 'request' }),
   });
 
   TestHarness.assertTrue(result !== undefined);
@@ -586,7 +586,7 @@ harness.add('cleanup: delete any remaining test posts', async () => {
 
   const result = await client.delete({
     slug: 'posts',
-    query: new lib.QueryBuilder().where('title', lib.Operator.Contains, 'Test Post'),
+    query: new lib.QueryBuilder().where({ field: 'title', operator: lib.Operator.Contains, value: 'Test Post' }),
   });
 
   TestHarness.assertTrue(Array.isArray(result.docs));
@@ -597,7 +597,7 @@ harness.add('cleanup: delete any remaining test media', async () => {
 
   const result = await client.delete({
     slug: 'media',
-    query: new lib.QueryBuilder().where('filename', lib.Operator.Contains, 'upload'),
+    query: new lib.QueryBuilder().where({ field: 'filename', operator: lib.Operator.Contains, value: 'upload' }),
   });
 
   TestHarness.assertTrue(Array.isArray(result.docs));

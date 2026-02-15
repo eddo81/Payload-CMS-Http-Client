@@ -20,10 +20,12 @@ export class JoinBuilder {
    * If `on` is an empty string, returns `undefined` and the
    * caller should skip the operation.
    *
-   * @param {string} on - The `Join Field` name (e.g. "relatedPosts").
+   * @param {string} options.on - The `Join Field` name (e.g. "relatedPosts").
    * @returns {JoinClause | undefined} The clause instance, or undefined if `on` is empty.
    */
-  private _getOrCreateClause(on: string): JoinClause | undefined {
+  private _getOrCreateClause(options: { on: string }): JoinClause | undefined {
+    const { on } = options;
+
     if (on === '') {
       return undefined;
     }
@@ -33,7 +35,7 @@ export class JoinBuilder {
     });
 
     if (clause === undefined) {
-      clause = new JoinClause(on);
+      clause = new JoinClause({ on });
       this._clauses.push(clause);
     }
 
@@ -45,10 +47,12 @@ export class JoinBuilder {
    *
    * Creates and caches a new instance on first access.
    *
-   * @param {string} on - The `Join Field` name.
+   * @param {string} options.on - The `Join Field` name.
    * @returns {WhereBuilder} The cached or newly created builder.
    */
-  private _getOrCreateWhereBuilder(on: string): WhereBuilder {
+  private _getOrCreateWhereBuilder(options: { on: string }): WhereBuilder {
+    const { on } = options;
+
     let builder = this._whereBuilders.get(on);
 
     if (builder === undefined) {
@@ -62,14 +66,15 @@ export class JoinBuilder {
  /**
   * Limits the number of joined documents returned.
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {number} value - Maximum document count (default 10).
+  * @param {string} options.on - The `Join Field` name.
+  * @param {number} options.value - Maximum document count (default 10).
   *
   * @returns {this} The current builder for chaining.
   */
-  limit(on: string, value: number): this {
-    const clause = this._getOrCreateClause(on);
-    
+  limit(options: { on: string; value: number }): this {
+    const { on, value } = options;
+    const clause = this._getOrCreateClause({ on });
+
     if (clause !== undefined) {
       clause.limit = value;
     }
@@ -80,17 +85,18 @@ export class JoinBuilder {
  /**
   * Sets the page of joined documents to retrieve (1-based).
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {number} page - The page number.
+  * @param {string} options.on - The `Join Field` name.
+  * @param {number} options.value - The page number.
   *
   * @returns {this} The current builder for chaining.
   */
-  page(on: string, page: number): this {
-    const clause = this._getOrCreateClause(on);
+  page(options: { on: string; value: number }): this {
+    const { on, value } = options;
+    const clause = this._getOrCreateClause({ on });
 
     if (clause !== undefined) {
-      clause.page = page;
-    } 
+      clause.page = value;
+    }
 
     return this;
   }
@@ -98,21 +104,23 @@ export class JoinBuilder {
  /**
   * Sorts joined documents ascending by the given field.
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {string} field - The field name to sort by.
+  * @param {string} options.on - The `Join Field` name.
+  * @param {string} options.field - The field name to sort by.
   *
   * @returns {this} The current builder for chaining.
   */
-  sort(on: string, field: string): this {
+  sort(options: { on: string; field: string }): this {
+    const { on, field } = options;
+
     if (field === '') {
       return this;
-    } 
+    }
 
-    const clause = this._getOrCreateClause(on);
-    
+    const clause = this._getOrCreateClause({ on });
+
     if (clause !== undefined) {
       clause.sort = field;
-    } 
+    }
 
     return this;
   }
@@ -122,28 +130,30 @@ export class JoinBuilder {
   *
   * Automatically prefixes the field with `-` if needed.
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {string} field - The field name to sort by.
+  * @param {string} options.on - The `Join Field` name.
+  * @param {string} options.field - The field name to sort by.
   *
   * @returns {this} The current builder for chaining.
   */
-  sortByDescending(on: string, field: string): this {
+  sortByDescending(options: { on: string; field: string }): this {
+    const { on, field } = options;
     const _field = field.startsWith('-') ? field : `-${field}`;
-    
-    return this.sort(on, _field);
+
+    return this.sort({ on, field: _field });
   }
 
  /**
   * Toggles the count of joined documents in the response.
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {boolean} value - Whether to include the count.
+  * @param {string} options.on - The `Join Field` name.
+  * @param {boolean} options.value - Whether to include the count.
   *
   * @returns {this} The current builder for chaining.
   */
-  count(on: string, value: boolean = true): this {
-    const clause = this._getOrCreateClause(on);
-    
+  count(options: { on: string; value?: boolean }): this {
+    const { on, value = true } = options;
+    const clause = this._getOrCreateClause({ on });
+
     if (clause !== undefined) {
        clause.count = value;
     }
@@ -157,23 +167,24 @@ export class JoinBuilder {
   * Multiple calls for the same join accumulate via
   * an internal {@link WhereBuilder} cache.
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {string} field - The field to compare.
-  * @param {Operator} operator - The comparison operator.
-  * @param {JsonValue} value - The value to compare against.
+  * @param {string} options.on - The `Join Field` name.
+  * @param {string} options.field - The field to compare.
+  * @param {Operator} options.operator - The comparison operator.
+  * @param {JsonValue} options.value - The value to compare against.
   *
   * @returns {this} The current builder for chaining.
   */
-  where(on: string, field: string, operator: Operator, value: JsonValue): this {
-    const builder = this._getOrCreateWhereBuilder(on);
-    
-    builder.where(field, operator, value);
+  where(options: { on: string; field: string; operator: Operator; value: JsonValue }): this {
+    const { on, field, operator, value } = options;
+    const builder = this._getOrCreateWhereBuilder({ on });
 
-    const clause = this._getOrCreateClause(on);
-    
+    builder.where({ field, operator, value });
+
+    const clause = this._getOrCreateClause({ on });
+
     if (clause !== undefined) {
       clause.where = builder.build();
-    } 
+    }
 
     return this;
   }
@@ -181,21 +192,22 @@ export class JoinBuilder {
  /**
   * Adds a nested `AND` group scoped to a `Join Field`.
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+  * @param {string} options.on - The `Join Field` name.
+  * @param {Function} options.callback - Receives a {@link WhereBuilder} for nested conditions.
   *
   * @returns {this} The current builder for chaining.
   */
-  and(on: string, callback: (builder: WhereBuilder) => void): this {
-    const builder = this._getOrCreateWhereBuilder(on);
+  and(options: { on: string; callback: (builder: WhereBuilder) => void }): this {
+    const { on, callback } = options;
+    const builder = this._getOrCreateWhereBuilder({ on });
 
-    builder.and(callback);
+    builder.and({ callback });
 
-    const clause = this._getOrCreateClause(on);
-    
+    const clause = this._getOrCreateClause({ on });
+
     if (clause !== undefined) {
       clause.where = builder.build();
-    } 
+    }
 
     return this;
   }
@@ -203,21 +215,22 @@ export class JoinBuilder {
  /**
   * Adds a nested `OR` group scoped to a `Join Field`.
   *
-  * @param {string} on - The `Join Field` name.
-  * @param {Function} callback - Receives a {@link WhereBuilder} for nested conditions.
+  * @param {string} options.on - The `Join Field` name.
+  * @param {Function} options.callback - Receives a {@link WhereBuilder} for nested conditions.
   *
   * @returns {this} The current builder for chaining.
   */
-  or(on: string, callback: (builder: WhereBuilder) => void): this {
-    const builder = this._getOrCreateWhereBuilder(on);
-    
-    builder.or(callback);
+  or(options: { on: string; callback: (builder: WhereBuilder) => void }): this {
+    const { on, callback } = options;
+    const builder = this._getOrCreateWhereBuilder({ on });
 
-    const clause = this._getOrCreateClause(on);
+    builder.or({ callback });
+
+    const clause = this._getOrCreateClause({ on });
 
     if (clause !== undefined) {
-      clause.where = builder.build(); 
-    } 
+      clause.where = builder.build();
+    }
 
     return this;
   }

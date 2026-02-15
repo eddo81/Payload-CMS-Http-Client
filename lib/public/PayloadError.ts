@@ -17,18 +17,15 @@ export class PayloadError extends Error {
     response?: Response;
     cause?: unknown;
   }) {
-    const data = {
-      statusCode: options.statusCode,
-      message: options.message ?? `[PayloadError] Request failed with status: ${options.statusCode}`,
-      response: options.response,
-      cause: options.cause,
-    };
+    const { statusCode, message, response, cause } = options;
 
-    super(data.message, { cause: data.cause });
+    const resolvedMessage = message ?? `[PayloadError] Request failed with status: ${statusCode}`;
+
+    super(resolvedMessage, { cause });
 
     this.name = 'PayloadError';
-    this.statusCode = data.statusCode;
-    this.response = data.response;
+    this.statusCode = statusCode;
+    this.response = response;
 
     Object.setPrototypeOf(this, PayloadError.prototype);
   }

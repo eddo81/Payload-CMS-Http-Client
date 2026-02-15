@@ -8,7 +8,7 @@ const encoder = new QueryStringEncoder({ addQueryPrefix: false });
 
 harness.add('Should serialize flat object', () => {
   const params = { limit: 10, page: 2 };
-  const queryString = Normalize(encoder.stringify(params));
+  const queryString = Normalize(encoder.stringify({ obj: params }));
   const expected = Normalize('limit=10&page=2');
 
   TestHarness.assertEqual(queryString, expected);
@@ -16,7 +16,7 @@ harness.add('Should serialize flat object', () => {
 
 harness.add('Should encode nested objects', () => {
   const params = { nested: { key: 'value' } };
-  const queryString = encoder.stringify(params);
+  const queryString = encoder.stringify({ obj: params });
   const expected = 'nested[key]=value';
 
   TestHarness.assertEqual(queryString, expected);
@@ -24,7 +24,7 @@ harness.add('Should encode nested objects', () => {
 
 harness.add('Should encode arrays with indices', () => {
   const params = { items: ['a', 'b'] };
-  const queryString = Normalize(encoder.stringify(params));
+  const queryString = Normalize(encoder.stringify({ obj: params }));
   const expected = Normalize('items[0]=a&items[1]=b');
 
   TestHarness.assertEqual(queryString, expected);
@@ -32,7 +32,7 @@ harness.add('Should encode arrays with indices', () => {
 
 harness.add('Should encode special characters in keys and values', () => {
   const params = { 'spaced key': 'hello world' };
-  const queryString = encoder.stringify(params);
+  const queryString = encoder.stringify({ obj: params });
   const expected = 'spaced%20key=hello%20world';
 
   TestHarness.assertEqual(queryString, expected);
@@ -41,7 +41,7 @@ harness.add('Should encode special characters in keys and values', () => {
 harness.add('Should encode Date values as ISO strings', () => {
   const date = new Date('2024-01-01T12:00:00Z');
   const params = { createdAt: date };
-  const queryString = encoder.stringify(params);
+  const queryString = encoder.stringify({ obj: params });
   const expected = `createdAt=2024-01-01T12%3A00%3A00.000Z`;
 
   TestHarness.assertEqual(queryString, expected);
@@ -49,7 +49,7 @@ harness.add('Should encode Date values as ISO strings', () => {
 
 harness.add('Should skip null and undefined values', () => {
   const params = { keep: 'yes', skip: null as any, alsoSkip: undefined };
-  const queryString = encoder.stringify(params);
+  const queryString = encoder.stringify({ obj: params });
   const expected = 'keep=yes';
 
   TestHarness.assertEqual(queryString, expected);
@@ -62,7 +62,7 @@ harness.add('Should skip unsupported types (symbol, bigint, function)', () => {
     large: BigInt(42) as any,
     fn: (() => {}) as any
   };
-  const queryString = encoder.stringify(params);
+  const queryString = encoder.stringify({ obj: params });
   const expected = 'ok=fine';
 
   TestHarness.assertEqual(queryString, expected);
@@ -70,7 +70,7 @@ harness.add('Should skip unsupported types (symbol, bigint, function)', () => {
 
 harness.add('Should return empty string for empty object', () => {
   const params = {};
-  const queryString = encoder.stringify(params);
+  const queryString = encoder.stringify({ obj: params });
   const expected = '';
 
   TestHarness.assertEqual(queryString, expected);

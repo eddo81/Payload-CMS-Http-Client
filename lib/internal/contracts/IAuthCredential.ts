@@ -9,7 +9,7 @@ export interface IAuthCredential {
    * Implementations should add, update, or remove headers
    * as required by their authentication method.
    *
-   * @param {Record<string, string>} headers - The mutable headers object to modify.
+   * @param {Record<string, string>} options.headers - The mutable headers object to modify.
    */
-  applyTo(headers: Record<string, string>): void;
+  applyTo(options: { headers: Record<string, string> }): void;
 }

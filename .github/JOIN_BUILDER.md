@@ -39,8 +39,8 @@ Example:
 
 ```ts
 joinBuilder
-  .where("posts", "author", "equals", "Alice")
-  .where("posts", "author", "equals", "Bob");
+  .where({ on: "posts", field: "author", operator: Operator.Equals, value: "Alice" })
+  .where({ on: "posts", field: "author", operator: Operator.Equals, value: "Bob" });
 ```
 
 Resulting structure:

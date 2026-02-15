@@ -5,12 +5,21 @@ import type { Json } from "../../types/Json.js";
  * Represents a logical `OR` grouping of {@link IClause} instances.
  */
 export class OrClause implements IClause {
-  constructor(private readonly clauses: IClause[]) {}
+  private readonly _clauses: IClause[];
+
+  constructor(options: { clauses: IClause[] }) {
+    const { clauses } = options;
+
+    this._clauses = clauses;
+  }
 
   /**
    * @returns {Json} The serialized `or` clause array.
    */
   build(): Json {
-    return { or: this.clauses.map(clause => clause.build()) };
+    const result: Json = {};
+    result['or'] = this._clauses.map(clause => clause.build());
+
+    return result;
   }
 }
