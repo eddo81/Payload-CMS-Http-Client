@@ -184,7 +184,7 @@ export class HttpClient {
     }
 
     if (this._auth) {
-      this._auth.applyTo({ headers });
+      this._auth.apply({ headers });
     }
 
     try {

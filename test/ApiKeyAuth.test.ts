@@ -7,7 +7,7 @@ harness.add('ApiKeyAuth should set Authorization header in Payload CMS format', 
   const auth = new ApiKeyAuth({ collectionSlug: 'users', apiKey: 'abc123' });
   const headers: Record<string, string> = {};
 
-  auth.applyTo({ headers });
+  auth.apply({ headers });
 
   TestHarness.assertEqual(headers['Authorization'], 'users API-Key abc123');
 });
@@ -18,7 +18,7 @@ harness.add('ApiKeyAuth should overwrite an existing Authorization header', () =
     'Authorization': 'Bearer old-token',
   };
 
-  auth.applyTo({ headers });
+  auth.apply({ headers });
 
   TestHarness.assertEqual(headers['Authorization'], 'users API-Key abc123');
 });
@@ -30,7 +30,7 @@ harness.add('ApiKeyAuth should preserve other headers', () => {
     'X-Custom': 'value',
   };
 
-  auth.applyTo({ headers });
+  auth.apply({ headers });
 
   TestHarness.assertEqual(headers['Accept'], 'application/json');
   TestHarness.assertEqual(headers['X-Custom'], 'value');
@@ -41,7 +41,7 @@ harness.add('ApiKeyAuth should use collection slug and key values as provided', 
   const auth = new ApiKeyAuth({ collectionSlug: 'admin-users', apiKey: 'key-with-dashes-123' });
   const headers: Record<string, string> = {};
 
-  auth.applyTo({ headers });
+  auth.apply({ headers });
 
   TestHarness.assertEqual(headers['Authorization'], 'admin-users API-Key key-with-dashes-123');
 });

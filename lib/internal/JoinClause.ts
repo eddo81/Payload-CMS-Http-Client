@@ -36,12 +36,26 @@ export class JoinClause implements IClause {
   build(): Json {
     const inner: Json = {};
 
-    if (this.limit !== undefined) inner.limit = this.limit;
-    if (this.page !== undefined) inner.page = this.page;
-    if (this.sort !== undefined) inner.sort = this.sort;
-    if (this.count !== undefined) inner.count = this.count;
-    if (this.where !== undefined) inner.where = this.where;
+    if (this.limit !== undefined) { 
+      inner.limit = this.limit; 
+    }
 
+    if (this.page !== undefined) { 
+      inner.page = this.page; 
+    }
+
+    if (this.sort !== undefined) { 
+      inner.sort = this.sort; 
+    }
+
+    if (this.count !== undefined) { 
+      inner.count = this.count; 
+    }
+
+    if (this.where !== undefined) { 
+      inner.where = this.where; 
+    }
+    
     const result: Json = {};
     result[this.on] = inner;
 

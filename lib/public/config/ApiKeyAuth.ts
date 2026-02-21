@@ -19,7 +19,7 @@ export class ApiKeyAuth implements IAuthCredential {
     this._apiKey = apiKey;
   }
 
-  applyTo(options: { headers: Record<string, string> }): void {
+  apply(options: { headers: Record<string, string> }): void {
     const { headers } = options;
 
     headers['Authorization'] = `${this._collectionSlug} API-Key ${this._apiKey}`;

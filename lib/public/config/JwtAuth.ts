@@ -16,7 +16,7 @@ export class JwtAuth implements IAuthCredential {
     this._token = token;
   }
 
-  applyTo(options: { headers: Record<string, string> }): void {
+  apply(options: { headers: Record<string, string> }): void {
     const { headers } = options;
 
     headers['Authorization'] = `Bearer ${this._token}`;

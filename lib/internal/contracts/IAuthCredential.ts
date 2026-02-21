@@ -11,5 +11,5 @@ export interface IAuthCredential {
    *
    * @param {Record<string, string>} options.headers - The mutable headers object to modify.
    */
-  applyTo(options: { headers: Record<string, string> }): void;
+  apply(options: { headers: Record<string, string> }): void;
 }

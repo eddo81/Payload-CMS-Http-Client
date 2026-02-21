@@ -379,7 +379,7 @@ Different methods unwrap the JSON response differently. This must be ported exac
 
 ### 6.3 Authentication
 
-The `IAuthCredential` interface defines `applyTo(options: { headers })` for injecting auth headers. Two implementations:
+The `IAuthCredential` interface defines `apply(options: { headers })` for injecting auth headers. Two implementations:
 
 - **`ApiKeyAuth`**: Sets `Authorization` to `{collectionSlug} API-Key {apiKey}`.
 - **`JwtAuth`**: Sets `Authorization` to `Bearer {token}`.
@@ -523,7 +523,7 @@ These appear in `HttpClient._fetch()` (parsing response body), HttpClient method
 
 1. **Default headers**: Always include `Accept: application/json` and `Content-Type: application/json`, merged with custom `_headers`.
 2. **FormData detection**: When body is `FormData`, delete `Content-Type` header so the runtime auto-sets the multipart boundary. In C#, don't set `ContentType` on the `HttpRequestMessage`; the `MultipartFormDataContent` handles it. In Dart, `MultipartRequest` handles it automatically.
-3. **Auth injection**: Call `_auth.applyTo({ headers })` before sending.
+3. **Auth injection**: Call `_auth.apply({ headers })` before sending.
 4. **Response parsing**: Read body as text, parse as JSON if non-empty.
 5. **Error wrapping**: Non-2xx responses throw `PayloadError` with status code and parsed JSON cause. Network failures, JSON parse errors, and abort errors are wrapped in generic `Error`.
 
