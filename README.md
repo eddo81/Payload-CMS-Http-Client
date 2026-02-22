@@ -29,7 +29,6 @@ const httpClient = new HttpClient({ baseUrl: 'http://localhost:3000' });
 new HttpClient(options: {
   baseUrl: string;
   headers?: Record<string, string>;
-  auth?: IAuthCredential;
 })
 ```
 
@@ -37,7 +36,6 @@ new HttpClient(options: {
 |-----------|------|-------------|
 | `baseUrl` | `string` | Payload CMS instance URL. Trailing slashes are stripped automatically. |
 | `headers` | `Record<string, string>` | Optional custom headers included with every request. |
-| `auth` | `IAuthCredential` | Optional authentication credential (`ApiKeyAuth` or `JwtAuth`). |
 
 ### Set headers
 
@@ -47,12 +45,28 @@ Replaces custom headers included with every request.
 setHeaders(options: { headers: Record<string, string> }): void
 ```
 
-### Set auth
+### Set API key auth
 
-Sets or clears the authentication credential.
+Sets an API key credential for all subsequent requests.
 
 ```typescript
-setAuth(options: { auth?: IAuthCredential }): void
+setApiKeyAuth(options: { auth: ApiKeyAuth }): void
+```
+
+### Set JWT auth
+
+Sets a JWT bearer token credential for all subsequent requests.
+
+```typescript
+setJwtAuth(options: { auth: JwtAuth }): void
+```
+
+### Clear auth
+
+Clears the current authentication credential. Subsequent requests are sent without authorization headers.
+
+```typescript
+clearAuth(): void
 ```
 
 ---
@@ -125,14 +139,14 @@ const total: number = await httpClient.count({ slug: 'posts' });
 Creates a new document. Supports file uploads on upload-enabled collections.
 
 ```typescript
-async create(options: { slug: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO>
+async create(options: { slug: string; data: Json; file?: FileUpload }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `data` | `Json` | Document data. |
-| `file` | `IFileUpload` | Optional file to upload (for upload-enabled collections). |
+| `file` | `FileUpload` | Optional file to upload (for upload-enabled collections). |
 
 #### Example
 ```typescript
@@ -186,7 +200,7 @@ const document: DocumentDTO = await httpClient.create({
 Updates a single document by ID. Supports file replacement.
 
 ```typescript
-async updateById(options: { slug: string; id: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO>
+async updateById(options: { slug: string; id: string; data: Json; file?: FileUpload }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
@@ -194,7 +208,7 @@ async updateById(options: { slug: string; id: string; data: Json; file?: IFileUp
 | `slug` | `string` | Collection slug. |
 | `id` | `string` | Document ID. |
 | `data` | `Json` | Fields to update. |
-| `file` | `IFileUpload` | Optional replacement file. |
+| `file` | `FileUpload` | Optional replacement file. |
 
 #### Example
 ```typescript
@@ -212,7 +226,7 @@ const document: DocumentDTO = await httpClient.updateById({
 Bulk-updates all documents matching a query. Supports file uploads.
 
 ```typescript
-async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IFileUpload }): Promise<PaginatedDocsDTO>
+async update(options: { slug: string; data: Json; query: QueryBuilder; file?: FileUpload }): Promise<PaginatedDocsDTO>
 ```
 
 | Parameter | Type | Description |
@@ -220,7 +234,7 @@ async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IF
 | `slug` | `string` | Collection slug. |
 | `data` | `Json` | Fields to update on all matching documents. |
 | `query` | `QueryBuilder` | Query to select documents to update. |
-| `file` | `IFileUpload` | Optional file to upload. |
+| `file` | `FileUpload` | Optional file to upload. |
 
 #### Example
 ```typescript
@@ -519,7 +533,7 @@ const loginResult: LoginResultDTO = await httpClient.login({
 });
 
 // Set the token on the client
-httpClient.setAuth({ auth: new JwtAuth({ token: loginResult.token }) });
+httpClient.setJwtAuth({ auth: new JwtAuth({ token: loginResult.token }) });
 
 // Authenticated requests now include the Bearer token
 const me: MeResultDTO = await httpClient.me({ slug: 'users' });
@@ -531,10 +545,8 @@ const me: MeResultDTO = await httpClient.me({ slug: 'users' });
 ```typescript
 import { HttpClient, ApiKeyAuth } from 'payload-cms-http-client';
 
-const httpClient = new HttpClient({
-  baseUrl: 'http://localhost:3000',
-  auth: new ApiKeyAuth({ collectionSlug: 'users', apiKey: 'your-api-key-here' }),
-});
+const httpClient = new HttpClient({ baseUrl: 'http://localhost:3000' });
+httpClient.setApiKeyAuth({ auth: new ApiKeyAuth({ collectionSlug: 'users', apiKey: 'your-api-key-here' }) });
 ```
 
 #### ApiKeyAuth
@@ -553,7 +565,7 @@ Sets the `Authorization` header to `Bearer {token}`.
 new JwtAuth(options: { token: string })
 ```
 
-Both implement `IAuthCredential` and can be passed to the `HttpClient` constructor or `setAuth()`.
+Both implement `IAuthCredential` internally. Use `setApiKeyAuth()` or `setJwtAuth()` to apply them to the client, or `clearAuth()` to remove credentials.
 
 ---
 

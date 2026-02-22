@@ -245,10 +245,8 @@ harness.add('login() should authenticate and return a token', async () => {
 });
 
 harness.add('me() should return the authenticated user', async () => {
-  const client = new lib.HttpClient({
-    baseUrl: BASE_URL,
-    auth: new lib.JwtAuth({ token: loginToken }),
-  });
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  client.setJwtAuth({ auth: new lib.JwtAuth({ token: loginToken }) });
 
   const result = await client.me({ slug: 'users' });
 
@@ -258,10 +256,8 @@ harness.add('me() should return the authenticated user', async () => {
 });
 
 harness.add('refreshToken() should return a new token', async () => {
-  const client = new lib.HttpClient({
-    baseUrl: BASE_URL,
-    auth: new lib.JwtAuth({ token: loginToken }),
-  });
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  client.setJwtAuth({ auth: new lib.JwtAuth({ token: loginToken }) });
 
   const result = await client.refreshToken({ slug: 'users' });
 
@@ -290,7 +286,7 @@ harness.add('logout() should return a message', async () => {
     data: { email: TEST_EMAIL, password: TEST_PASSWORD },
   });
 
-  client.setAuth({ auth: new lib.JwtAuth({ token: loginResult.token }) });
+  client.setJwtAuth({ auth: new lib.JwtAuth({ token: loginResult.token }) });
 
   const result = await client.logout({ slug: 'users' });
 
@@ -333,7 +329,7 @@ harness.add('refreshToken() without auth should throw PayloadError', async () =>
   TestHarness.assertTrue(caught!.statusCode >= 400);
 });
 
-harness.add('setAuth() should enable auth after construction', async () => {
+harness.add('setJwtAuth() should enable auth after construction', async () => {
   const client = new lib.HttpClient({ baseUrl: BASE_URL });
 
   // Without auth, me() returns an empty user
@@ -341,7 +337,7 @@ harness.add('setAuth() should enable auth after construction', async () => {
   TestHarness.assertEqual(before.user.id, '');
 
   // After setting auth, me() returns the authenticated user
-  client.setAuth({ auth: new lib.JwtAuth({ token: loginToken }) });
+  client.setJwtAuth({ auth: new lib.JwtAuth({ token: loginToken }) });
   const after = await client.me({ slug: 'users' });
 
   TestHarness.assertTrue(after.user.id !== '');
@@ -435,10 +431,8 @@ harness.add('PayloadError should expose statusCode and cause from failed request
 // ── ApiKeyAuth Tests ────────────────────────────────────────────
 
 harness.add('ApiKeyAuth should authenticate and allow creating a post', async () => {
-  const client = new lib.HttpClient({
-    baseUrl: BASE_URL,
-    auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }),
-  });
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  client.setApiKeyAuth({ auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }) });
 
   const result = await client.create({
     slug: 'posts',
@@ -450,10 +444,8 @@ harness.add('ApiKeyAuth should authenticate and allow creating a post', async ()
 });
 
 harness.add('ApiKeyAuth should authenticate and allow reading via me()', async () => {
-  const client = new lib.HttpClient({
-    baseUrl: BASE_URL,
-    auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }),
-  });
+  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  client.setApiKeyAuth({ auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }) });
 
   const result = await client.me({ slug: 'users' });
 

@@ -388,7 +388,7 @@ Design choice: `login()` returns the result only — it does **not** auto-set au
 
 ```typescript
 const result = await client.login({ slug: 'users', data: { email, password } });
-client.setAuth({ auth: new JwtAuth({ token: result.token }) });
+client.setJwtAuth({ auth: new JwtAuth({ token: result.token }) });
 ```
 
 ### 6.4 File Upload
@@ -535,10 +535,15 @@ Validates the URL via constructor (`new URL(url)`) and strips trailing slashes. 
 
 TypeScript uses inline object types for ALL method parameters (public, private, interface). These map to native named parameters in C#/Dart. No separate "options" classes are needed.
 
-The full list of HttpClient methods and their parameters:
+The constructor and full list of HttpClient methods and their parameters:
 
 | Method | Required params | Optional params |
 |---|---|---|
+| `constructor` | `baseUrl` | `headers` |
+| `setHeaders` | `headers` | |
+| `setApiKeyAuth` | `auth` (ApiKeyAuth) | |
+| `setJwtAuth` | `auth` (JwtAuth) | |
+| `clearAuth` | — | |
 | `find` | `slug` | `query` |
 | `findById` | `slug`, `id` | `query` |
 | `count` | `slug` | `query` |
@@ -810,6 +815,8 @@ lib/
 ```
 
 ### 8.14 Portability Decisions Log
+
+**Why split auth setter methods**: TypeScript does not support method overloading. To maintain structural parity across all three language ports, `setAuth(IAuthCredential)` was split into `setApiKeyAuth(ApiKeyAuth)` and `setJwtAuth(JwtAuth)`, each accepting a concrete public type rather than the internal `IAuthCredential` interface. `clearAuth()` replaces `setAuth(undefined)`. The `auth` parameter was also removed from the constructor — credentials must be set explicitly after construction. This ensures the internal `IAuthCredential` interface never leaks into the public API surface.
 
 **Why no `JsonObject` wrapper class**: A wrapper was prototyped and reverted. Each language already has native JSON serialization. The wrapper forced consumers to use `new JsonObject({...})` instead of plain literals. Native dictionary types are the expected JSON representation in C# and Dart.
 

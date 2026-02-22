@@ -9,9 +9,10 @@ import { MessageDTO } from "./models/auth/MessageDTO.js";
 import { PayloadError } from "./PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "../internal/utils/QueryStringEncoder.js";
-import type { IAuthCredential } from "../internal/contracts/IAuthCredential.js";
+import { ApiKeyAuth } from "./config/ApiKeyAuth.js";
+import { JwtAuth } from "./config/JwtAuth.js";
 import type { Json } from "../../types/Json.js";
-import type { IFileUpload } from "../internal/contracts/IFileUpload.js";
+import { FileUpload } from "./upload/FileUpload.js";
 import { FormDataBuilder } from "../internal/upload/FormDataBuilder.js";
 import { HttpMethod } from "./enums/HttpMethod.js";
 
@@ -24,20 +25,16 @@ import { HttpMethod } from "./enums/HttpMethod.js";
 export class HttpClient {
   private _baseUrl: string;
   private _headers: Record<string, string> = {};
-  private _auth: IAuthCredential | undefined = undefined;
+  private _auth: ApiKeyAuth | JwtAuth | undefined = undefined;
   private _encoder: QueryStringEncoder = new QueryStringEncoder();
 
-  constructor(options: { baseUrl: string; headers?: Record<string, string>; auth?: IAuthCredential }) {
-    const { baseUrl, headers, auth } = options;
+  constructor(options: { baseUrl: string; headers?: Record<string, string> }) {
+    const { baseUrl, headers } = options;
 
     this._baseUrl = this._normalizeUrl({ url: baseUrl });
 
     if(headers !== undefined) {
       this.setHeaders({ headers });
-    }
-
-    if(auth !== undefined) {
-      this.setAuth({ auth });
     }
   }
 
@@ -84,19 +81,40 @@ export class HttpClient {
   }
 
  /**
-  * Sets or clears the authentication credential.
+  * Sets an API key credential for all subsequent requests.
   *
-  * Pass an {@link IAuthCredential} to inject authorization
-  * headers, or `undefined` to clear.
-  *
-  * @param {IAuthCredential | undefined} options.auth - The credential to use, or `undefined` to clear.
+  * @param {ApiKeyAuth} options.auth - The {@link ApiKeyAuth} credential to use.
   *
   * @returns {void}
   */
-  public setAuth(options: { auth?: IAuthCredential }): void {
+  public setApiKeyAuth(options: { auth: ApiKeyAuth }): void {
     const { auth } = options;
 
     this._auth = auth;
+  }
+
+ /**
+  * Sets a JWT bearer token credential for all subsequent requests.
+  *
+  * @param {JwtAuth} options.auth - The {@link JwtAuth} credential to use.
+  *
+  * @returns {void}
+  */
+  public setJwtAuth(options: { auth: JwtAuth }): void {
+    const { auth } = options;
+
+    this._auth = auth;
+  }
+
+ /**
+  * Clears the current authentication credential.
+  *
+  * Subsequent requests will be sent without authorization headers.
+  *
+  * @returns {void}
+  */
+  public clearAuth(): void {
+    this._auth = undefined;
   }
 
  /**
@@ -273,11 +291,11 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {Json} options.data - The document data to create.
-   * @param {IFileUpload} [options.file] - Optional file for `upload`-enabled collections.
+   * @param {FileUpload} [options.file] - Optional file for `upload`-enabled collections.
    *
    * @returns {Promise<DocumentDTO>} The created document.
    */
-  async create(options: { slug: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
+  async create(options: { slug: string; data: Json; file?: FileUpload }): Promise<DocumentDTO> {
     const { slug, data, file } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}`;
     const method: HttpMethod = HttpMethod.POST;
@@ -345,11 +363,11 @@ export class HttpClient {
    * @param {string} options.slug - The `collection` slug.
    * @param {Json} options.data - The fields to update on matching documents.
    * @param {QueryBuilder} options.query - {@link QueryBuilder} with `where` clause to select documents.
-   * @param {IFileUpload} [options.file] - Optional file for `upload`-enabled collections.
+   * @param {FileUpload} [options.file] - Optional file for `upload`-enabled collections.
    *
    * @returns {Promise<PaginatedDocsDTO>} The bulk result containing updated documents.
    */
-  async update(options: { slug: string; data: Json; query: QueryBuilder; file?: IFileUpload }): Promise<PaginatedDocsDTO> {
+  async update(options: { slug: string; data: Json; query: QueryBuilder; file?: FileUpload }): Promise<PaginatedDocsDTO> {
     const { slug, data, query, file } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
     const method: HttpMethod = HttpMethod.PATCH;
@@ -371,11 +389,11 @@ export class HttpClient {
    * @param {string} options.slug - The `collection` slug.
    * @param {string} options.id - The document ID.
    * @param {Json} options.data - The fields to update.
-   * @param {IFileUpload} [options.file] - Optional file for `upload`-enabled collections.
+   * @param {FileUpload} [options.file] - Optional file for `upload`-enabled collections.
    *
    * @returns {Promise<DocumentDTO>} The updated document.
    */
-  async updateById(options: { slug: string; id: string; data: Json; file?: IFileUpload }): Promise<DocumentDTO> {
+  async updateById(options: { slug: string; id: string; data: Json; file?: FileUpload }): Promise<DocumentDTO> {
     const { slug, id, data, file } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
     const method: HttpMethod = HttpMethod.PATCH;
