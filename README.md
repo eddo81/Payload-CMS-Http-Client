@@ -1,6 +1,6 @@
 # Payload CMS HTTP Client
 
-A lightweight, zero-dependency HTTP client for the [Payload CMS](https://payloadcms.com/) REST API. Built in TypeScript with explicit design for porting to **C#** and **Dart**.
+A lightweight, zero-dependency HTTP client for the [Payload CMS](https://payloadcms.com/) REST API built in TypeScript.
 
 - Typed methods for collections, globals, auth, and versions
 - Fluent query builder with where clauses, joins, sorting, and pagination
