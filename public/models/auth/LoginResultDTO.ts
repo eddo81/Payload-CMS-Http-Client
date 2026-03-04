@@ -1,5 +1,5 @@
 import { DocumentDTO } from "../collection/DocumentDTO.js";
-import type { Json } from "../../../../types/Json.js";
+import type { Json } from "../../../types/Json.js";
 
 /**
  * Represents the response from a Payload CMS `login` endpoint.

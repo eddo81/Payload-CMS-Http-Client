@@ -11,7 +11,7 @@ import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "../internal/utils/QueryStringEncoder.js";
 import { ApiKeyAuth } from "./config/ApiKeyAuth.js";
 import { JwtAuth } from "./config/JwtAuth.js";
-import type { Json } from "../../types/Json.js";
+import type { Json } from "../types/Json.js";
 import { FileUpload } from "./upload/FileUpload.js";
 import { FormDataBuilder } from "../internal/upload/FormDataBuilder.js";
 import { HttpMethod } from "./enums/HttpMethod.js";

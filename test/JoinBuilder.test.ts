@@ -1,5 +1,5 @@
 import * as lib from '../index.ts';
-import { QueryStringEncoder } from '../lib/internal/utils/QueryStringEncoder.ts';
+import { QueryStringEncoder } from '../internal/utils/QueryStringEncoder.ts';
 import { TestHarness } from './TestHarness.ts';
 
 const encoder = new QueryStringEncoder({ addQueryPrefix: false });

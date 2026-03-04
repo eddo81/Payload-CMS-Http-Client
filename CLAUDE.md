@@ -18,22 +18,21 @@ A lightweight, zero-dependency HTTP client library for Payload CMS's REST API. W
 ```
 types/                     # TS-only type aliases (NO equivalent in C#/Dart)
 │   └── Json.ts            # Json, JsonValue, JsonObject, JsonArray, JsonPrimitive
-lib/                       # 1:1 portable — every file has a C#/Dart equivalent
-├── public/                # Consumer-facing API surface (exported)
-│   ├── config/            # Auth credentials (ApiKeyAuth, JwtAuth)
-│   ├── models/            # DTOs with fromJson factory methods
-│   ├── enums/             # String enums (Operator, HttpMethod)
-│   ├── upload/            # File upload (FileUpload)
-│   ├── HttpClient.ts      # Main HTTP client
-│   ├── QueryBuilder.ts    # Fluent query builder facade
-│   ├── WhereBuilder.ts    # Where clause composition
-│   ├── JoinBuilder.ts     # Join clause composition
-│   └── PayloadError.ts    # Structured error type
-├── internal/              # Internal implementation (not exported)
-│   ├── contracts/         # Internal interfaces (IClause, IAuthCredential, IFileUpload)
-│   ├── upload/            # FormDataBuilder
-│   └── utils/             # Utilities (QueryStringEncoder)
-index.ts                   # Barrel export (project root, not inside lib/)
+public/                    # Consumer-facing API surface (exported, 1:1 portable)
+├── config/                # Auth credentials (ApiKeyAuth, JwtAuth)
+├── models/                # DTOs with fromJson factory methods
+├── enums/                 # String enums (Operator, HttpMethod)
+├── upload/                # File upload (FileUpload)
+├── PayloadSDK.ts          # Main HTTP client
+├── QueryBuilder.ts        # Fluent query builder facade
+├── WhereBuilder.ts        # Where clause composition
+├── JoinBuilder.ts         # Join clause composition
+└── PayloadError.ts        # Structured error type
+internal/                  # Internal implementation (not exported, 1:1 portable)
+├── contracts/             # Internal interfaces (IClause, IAuthCredential, IFileUpload)
+├── upload/                # FormDataBuilder
+└── utils/                 # Utilities (QueryStringEncoder)
+index.ts                   # Barrel export (project root)
 ```
 
 ## Key Design Principles

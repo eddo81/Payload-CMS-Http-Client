@@ -1,5 +1,5 @@
 import { TestHarness, Normalize } from './TestHarness.ts';
-import { QueryStringEncoder } from '../lib/internal/utils/QueryStringEncoder.ts';
+import { QueryStringEncoder } from '../internal/utils/QueryStringEncoder.ts';
 
 const harness = new TestHarness();
 const encoder = new QueryStringEncoder({ addQueryPrefix: false });
