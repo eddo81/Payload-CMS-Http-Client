@@ -15,6 +15,9 @@ import type { Json } from "../../types/Json.js";
 import { FileUpload } from "./upload/FileUpload.js";
 import { FormDataBuilder } from "../internal/upload/FormDataBuilder.js";
 import { HttpMethod } from "./enums/HttpMethod.js";
+import type { IAuthCredential } from "../internal/contracts/IAuthCredential.js";
+import { JsonParser } from "../internal/utils/JsonParser.js";
+import type { RequestConfig } from "./config/RequestConfig.js";
 
 /**
  * HTTP client for the Payload CMS REST API.
@@ -22,20 +25,16 @@ import { HttpMethod } from "./enums/HttpMethod.js";
  * Provides typed methods for `collections`, `globals`,
  * `auth`, `versions`, and file uploads.
  */
-export class HttpClient {
+export class PayloadSDK {
   private _baseUrl: string;
   private _headers: Record<string, string> = {};
-  private _auth: ApiKeyAuth | JwtAuth | undefined = undefined;
+  private _auth: IAuthCredential | undefined = undefined;
   private _encoder: QueryStringEncoder = new QueryStringEncoder();
 
-  constructor(options: { baseUrl: string; headers?: Record<string, string> }) {
-    const { baseUrl, headers } = options;
+  constructor(options: { baseUrl: string }) {
+    const { baseUrl } = options;
 
     this._baseUrl = this._normalizeUrl({ url: baseUrl });
-
-    if(headers !== undefined) {
-      this.setHeaders({ headers });
-    }
   }
 
  /**
@@ -124,24 +123,22 @@ export class HttpClient {
   * Uses the same headers, auth, and error handling
   * but returns raw JSON instead of a DTO.
   *
-  * @param {HttpMethod} options.method - The HTTP method to use.
-  * @param {string} options.path - URL path appended to the base URL (e.g. `/api/custom-endpoint`).
-  * @param {Json} [options.body] - Optional JSON body to send.
-  * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for query parameters.
+  * @param {RequestConfig} config - The request configuration.
+  * @param {AbortSignal} [signal] - Optional abort signal for cancellation.
   *
   * @returns {Promise<Json | undefined>} The parsed JSON response, or `undefined` for empty bodies.
   */
-  async request(options: { method: HttpMethod; path: string; body?: Json; query?: QueryBuilder }): Promise<Json | undefined> {
-    const { method, path, body, query } = options;
+  async request(config: RequestConfig, signal?: AbortSignal): Promise<Json | undefined> {
+    const { method, path, body, query } = config;
     const url = this._appendQueryString({ url: `${this._baseUrl}${path}`, query });
 
-    const config: RequestInit = { method };
+    const requestInit: RequestInit = { method };
 
     if (body !== undefined) {
-      config.body = JSON.stringify(body);
+      requestInit.body = JsonParser.stringify(body);
     }
 
-    return this._fetch({ url, config });
+    return this._fetch({ url, config: requestInit, signal });
   }
 
  /**
@@ -177,14 +174,15 @@ export class HttpClient {
   *
   * @param {string} options.url - Fully resolved request URL.
   * @param {RequestInit} options.config - Optional `fetch` configuration overrides.
+  * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
   *
   * @returns {Promise<Json | undefined>} Parsed JSON, or `undefined` for empty responses.
   *
   * @throws {PayloadError} On non-2xx responses.
   * @throws {Error} On network, parsing, or abort failures.
   */
-  private async _fetch(options: { url: string; config?: RequestInit }): Promise<Json | undefined> {
-    const { url, config = {} } = options;
+  private async _fetch(options: { url: string; config?: RequestInit; signal?: AbortSignal }): Promise<Json | undefined> {
+    const { url, config = {}, signal } = options;
 
     let response: Response;
     let text: string;
@@ -210,13 +208,12 @@ export class HttpClient {
         method: defaultMethod,
         ...config,
         headers: headers,
+        signal: signal,
       });
 
       text = await response.text();
 
-      if(text.length > 0) {
-        json = JSON.parse(text);
-      }
+      json = JsonParser.parse(text);
 
       if(!response.ok) {
         throw new PayloadError({
@@ -256,13 +253,14 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering, sorting, pagination.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<PaginatedDocsDTO>} A paginated response containing matching documents.
    */
-  async find(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
-    const { slug, query } = options;
+  async find(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
+    const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -274,13 +272,14 @@ export class HttpClient {
    * @param {string} options.slug - The `collection` slug.
    * @param {string} options.id - The document ID.
    * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for depth, locale, etc.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The requested document.
    */
-  async findById(options: { slug: string; id: string; query?: QueryBuilder }): Promise<DocumentDTO> {
-    const { slug, id, query } = options;
+  async findById(options: { slug: string; id: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, id, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`, query });
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -292,20 +291,21 @@ export class HttpClient {
    * @param {string} options.slug - The `collection` slug.
    * @param {Json} options.data - The document data to create.
    * @param {FileUpload} [options.file] - Optional file for `upload`-enabled collections.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The created document.
    */
-  async create(options: { slug: string; data: Json; file?: FileUpload }): Promise<DocumentDTO> {
-    const { slug, data, file } = options;
+  async create(options: { slug: string; data: Json; file?: FileUpload; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, data, file, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}`;
     const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
-      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JSON.stringify(data),
+      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -316,11 +316,12 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {QueryBuilder} options.query - {@link QueryBuilder} with `where` clause to select documents.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<PaginatedDocsDTO>} The bulk result containing deleted documents.
    */
-  async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedDocsDTO> {
-    const { slug, query } = options;
+  async delete(options: { slug: string; query: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
+    const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
     const method: HttpMethod = HttpMethod.DELETE;
 
@@ -328,7 +329,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -339,11 +340,12 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {string} options.id - The document ID.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The deleted document.
    */
-  async deleteById(options: { slug: string; id: string }): Promise<DocumentDTO> {
-    const { slug, id } = options;
+  async deleteById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, id, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
     const method: HttpMethod = HttpMethod.DELETE;
 
@@ -351,7 +353,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -364,20 +366,21 @@ export class HttpClient {
    * @param {Json} options.data - The fields to update on matching documents.
    * @param {QueryBuilder} options.query - {@link QueryBuilder} with `where` clause to select documents.
    * @param {FileUpload} [options.file] - Optional file for `upload`-enabled collections.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<PaginatedDocsDTO>} The bulk result containing updated documents.
    */
-  async update(options: { slug: string; data: Json; query: QueryBuilder; file?: FileUpload }): Promise<PaginatedDocsDTO> {
-    const { slug, data, query, file } = options;
+  async update(options: { slug: string; data: Json; query: QueryBuilder; file?: FileUpload; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
+    const { slug, data, query, file, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
     const method: HttpMethod = HttpMethod.PATCH;
 
     const config: RequestInit = {
       method: method,
-      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JSON.stringify(data),
+      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -390,20 +393,21 @@ export class HttpClient {
    * @param {string} options.id - The document ID.
    * @param {Json} options.data - The fields to update.
    * @param {FileUpload} [options.file] - Optional file for `upload`-enabled collections.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The updated document.
    */
-  async updateById(options: { slug: string; id: string; data: Json; file?: FileUpload }): Promise<DocumentDTO> {
-    const { slug, id, data, file } = options;
+  async updateById(options: { slug: string; id: string; data: Json; file?: FileUpload; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, id, data, file, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`;
     const method: HttpMethod = HttpMethod.PATCH;
 
     const config: RequestInit = {
       method: method,
-      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JSON.stringify(data),
+      body: file !== undefined ? FormDataBuilder.build({ file, data }) : JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -414,13 +418,14 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<number>} The total document count.
    */
-  async count(options: { slug: string; query?: QueryBuilder }): Promise<number> {
-    const { slug, query } = options;
+  async count(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<number> {
+    const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/count`, query });
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = TotalDocsDTO.fromJson(json);
 
     return dto.totalDocs;
@@ -430,13 +435,14 @@ export class HttpClient {
    * Retrieves a `global` document.
    *
    * @param {string} options.slug - The `global` slug.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The `global` document.
    */
-  async findGlobal(options: { slug: string }): Promise<DocumentDTO> {
-    const { slug } = options;
+  async findGlobal(options: { slug: string; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, signal } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -447,20 +453,21 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `global` slug.
    * @param {Json} options.data - The fields to update.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The updated `global` document.
    */
-  async updateGlobal(options: { slug: string; data: Json }): Promise<DocumentDTO> {
-    const { slug, data } = options;
+  async updateGlobal(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, data, signal } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
     const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
-      body: JSON.stringify(data),
+      body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['result'] as Json ?? {});
 
     return dto;
@@ -471,13 +478,14 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering, sorting, pagination.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<PaginatedDocsDTO>} A paginated response containing `version` documents.
    */
-  async findVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
-    const { slug, query } = options;
+  async findVersions(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
+    const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions`, query });
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -488,13 +496,14 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {string} options.id - The `version` ID.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The `version` document.
    */
-  async findVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
-    const { slug, id } = options;
+  async findVersionById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, id, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -505,11 +514,12 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `collection` slug.
    * @param {string} options.id - The `version` ID to restore.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The restored document.
    */
-  async restoreVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
-    const { slug, id } = options;
+  async restoreVersion(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, id, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
     const method: HttpMethod = HttpMethod.POST;
 
@@ -517,7 +527,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -528,13 +538,14 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `global` slug.
    * @param {QueryBuilder} [options.query] - Optional {@link QueryBuilder} for filtering, sorting, pagination.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<PaginatedDocsDTO>} A paginated response containing `version` documents.
    */
-  async findGlobalVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO> {
-    const { slug, query } = options;
+  async findGlobalVersions(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
+    const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions`, query });
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -545,13 +556,14 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `global` slug.
    * @param {string} options.id - The `version` ID.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The `version` document.
    */
-  async findGlobalVersionById(options: { slug: string; id: string }): Promise<DocumentDTO> {
-    const { slug, id } = options;
+  async findGlobalVersionById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, id, signal } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -562,11 +574,12 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `global` slug.
    * @param {string} options.id - The `version` ID to restore.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<DocumentDTO>} The restored document.
    */
-  async restoreGlobalVersion(options: { slug: string; id: string }): Promise<DocumentDTO> {
-    const { slug, id } = options;
+  async restoreGlobalVersion(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO> {
+    const { slug, id, signal } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
     const method: HttpMethod = HttpMethod.POST;
 
@@ -574,7 +587,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -585,20 +598,21 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
    * @param {Json} options.data - The login credentials (e.g. `{ email, password }`).
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<LoginResultDTO>} The login result containing token, expiration, and user.
    */
-  async login(options: { slug: string; data: Json }): Promise<LoginResultDTO> {
-    const { slug, data } = options;
+  async login(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<LoginResultDTO> {
+    const { slug, data, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/login`;
     const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
-      body: JSON.stringify(data),
+      body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = LoginResultDTO.fromJson(json);
 
     return dto;
@@ -608,13 +622,14 @@ export class HttpClient {
    * Retrieves the currently authenticated user.
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<MeResultDTO>} The current user with token and session metadata.
    */
-  async me(options: { slug: string }): Promise<MeResultDTO> {
-    const { slug } = options;
+  async me(options: { slug: string; signal?: AbortSignal }): Promise<MeResultDTO> {
+    const { slug, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/me`;
-    const json = await this._fetch({ url }) ?? {};
+    const json = await this._fetch({ url, signal }) ?? {};
     const dto = MeResultDTO.fromJson(json);
 
     return dto;
@@ -624,11 +639,12 @@ export class HttpClient {
    * Refreshes the current JWT token.
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<RefreshResultDTO>} The new token, expiration, and user.
    */
-  async refreshToken(options: { slug: string }): Promise<RefreshResultDTO> {
-    const { slug } = options;
+  async refreshToken(options: { slug: string; signal?: AbortSignal }): Promise<RefreshResultDTO> {
+    const { slug, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/refresh-token`;
     const method: HttpMethod = HttpMethod.POST;
 
@@ -636,7 +652,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = RefreshResultDTO.fromJson(json);
 
     return dto;
@@ -647,20 +663,21 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
    * @param {Json} options.data - The request data (e.g. `{ email }`).
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<MessageDTO>} A message confirming the request was processed.
    */
-  async forgotPassword(options: { slug: string; data: Json }): Promise<MessageDTO> {
-    const { slug, data } = options;
+  async forgotPassword(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<MessageDTO> {
+    const { slug, data, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/forgot-password`;
     const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
-      body: JSON.stringify(data),
+      body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -671,20 +688,21 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
    * @param {Json} options.data - The reset data (e.g. `{ token, password }`).
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<ResetPasswordResultDTO>} The user document and optional new token.
    */
-  async resetPassword(options: { slug: string; data: Json }): Promise<ResetPasswordResultDTO> {
-    const { slug, data } = options;
+  async resetPassword(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<ResetPasswordResultDTO> {
+    const { slug, data, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/reset-password`;
     const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
-      body: JSON.stringify(data),
+      body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = ResetPasswordResultDTO.fromJson(json);
 
     return dto;
@@ -695,11 +713,12 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
    * @param {string} options.token - The email verification token.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<MessageDTO>} A message confirming the verification result.
    */
-  async verifyEmail(options: { slug: string; token: string }): Promise<MessageDTO> {
-    const { slug, token } = options;
+  async verifyEmail(options: { slug: string; token: string; signal?: AbortSignal }): Promise<MessageDTO> {
+    const { slug, token, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/verify/${encodeURIComponent(token)}`;
     const method: HttpMethod = HttpMethod.POST;
 
@@ -707,7 +726,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -717,11 +736,12 @@ export class HttpClient {
    * Logs out the currently authenticated user.
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<MessageDTO>} A message confirming the logout.
    */
-  async logout(options: { slug: string }): Promise<MessageDTO> {
-    const { slug } = options;
+  async logout(options: { slug: string; signal?: AbortSignal }): Promise<MessageDTO> {
+    const { slug, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/logout`;
     const method: HttpMethod = HttpMethod.POST;
 
@@ -729,7 +749,7 @@ export class HttpClient {
       method: method,
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -740,20 +760,21 @@ export class HttpClient {
    *
    * @param {string} options.slug - The `auth`-enabled `collection` slug.
    * @param {Json} options.data - The request data (e.g. `{ email }`).
+   * @param {AbortSignal} [options.signal] - Optional abort signal for cancellation.
    *
    * @returns {Promise<MessageDTO>} A message confirming the unlock.
    */
-  async unlock(options: { slug: string; data: Json }): Promise<MessageDTO> {
-    const { slug, data } = options;
+  async unlock(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<MessageDTO> {
+    const { slug, data, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/unlock`;
     const method: HttpMethod = HttpMethod.POST;
 
     const config: RequestInit = {
       method: method,
-      body: JSON.stringify(data),
+      body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config }) ?? {};
+    const json = await this._fetch({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;

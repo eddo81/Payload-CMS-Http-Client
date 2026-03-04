@@ -18,24 +18,22 @@ npm install payload-cms-http-client
 ## Usage
 
 ```typescript
-import { HttpClient } from 'payload-cms-http-client';
+import { PayloadSDK } from 'payload-cms-http-client';
 
-const httpClient = new HttpClient({ baseUrl: 'http://localhost:3000' });
+const client = new PayloadSDK({ baseUrl: 'http://localhost:3000' });
 ```
 
 ### Constructor
 
 ```typescript
-new HttpClient(options: {
+new PayloadSDK(options: {
   baseUrl: string;
-  headers?: Record<string, string>;
 })
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `baseUrl` | `string` | Payload CMS instance URL. Trailing slashes are stripped automatically. |
-| `headers` | `Record<string, string>` | Optional custom headers included with every request. |
 
 ### Set headers
 
@@ -78,19 +76,26 @@ clearAuth(): void
 Retrieves a paginated list of documents.
 
 ```typescript
-async find(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO>
+async find(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `query` | `QueryBuilder` | Optional query parameters (where, sort, limit, etc.). |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: PaginatedDocsDTO = await httpClient.find({ slug: 'posts' });
+const result: PaginatedDocsDTO = await client.find({ slug: 'posts' });
 
-// Outputs: { docs: [DocumentDTO, ...], totalDocs: 42, totalPages: 5, page: 1, limit: 10, hasNextPage: true, hasPrevPage: false }
+// result.docs        — DocumentDTO[]
+// result.totalDocs   — 42
+// result.totalPages  — 5
+// result.page        — 1
+// result.limit       — 10
+// result.hasNextPage — true
+// result.hasPrevPage — false
 ```
 
 ### Find by ID
@@ -98,7 +103,7 @@ const result: PaginatedDocsDTO = await httpClient.find({ slug: 'posts' });
 Retrieves a single document by ID.
 
 ```typescript
-async findById(options: { slug: string; id: string; query?: QueryBuilder }): Promise<DocumentDTO>
+async findById(options: { slug: string; id: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
@@ -106,12 +111,16 @@ async findById(options: { slug: string; id: string; query?: QueryBuilder }): Pro
 | `slug` | `string` | Collection slug. |
 | `id` | `string` | Document ID. |
 | `query` | `QueryBuilder` | Optional query parameters. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.findById({ slug: 'posts', id: '123' });
+const document: DocumentDTO = await client.findById({ slug: 'posts', id: '123' });
 
-// Outputs: { id: '123', json: { id: '123', title: 'Hello World', ... }, createdAt: Date, updatedAt: Date }
+// document.id        — "123"
+// document.json      — { id: '123', title: 'Hello World', ... }
+// document.createdAt — Date | undefined
+// document.updatedAt — Date | undefined
 ```
 
 ### Count
@@ -119,19 +128,20 @@ const document: DocumentDTO = await httpClient.findById({ slug: 'posts', id: '12
 Returns the total count of documents matching an optional query.
 
 ```typescript
-async count(options: { slug: string; query?: QueryBuilder }): Promise<number>
+async count(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<number>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `query` | `QueryBuilder` | Optional query parameters to filter the count. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const total: number = await httpClient.count({ slug: 'posts' });
+const total: number = await client.count({ slug: 'posts' });
 
-// Outputs: 42
+// total — 42
 ```
 
 ### Create
@@ -139,7 +149,7 @@ const total: number = await httpClient.count({ slug: 'posts' });
 Creates a new document. Supports file uploads on upload-enabled collections.
 
 ```typescript
-async create(options: { slug: string; data: Json; file?: FileUpload }): Promise<DocumentDTO>
+async create(options: { slug: string; data: Json; file?: FileUpload; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
@@ -147,15 +157,17 @@ async create(options: { slug: string; data: Json; file?: FileUpload }): Promise<
 | `slug` | `string` | Collection slug. |
 | `data` | `Json` | Document data. |
 | `file` | `FileUpload` | Optional file to upload (for upload-enabled collections). |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.create({
+const document: DocumentDTO = await client.create({
   slug: 'posts',
   data: { title: 'Hello World', content: 'My first post.' },
 });
 
-// Outputs: { id: 'abc123', json: { id: 'abc123', title: 'Hello World', content: 'My first post.', ... }, createdAt: Date, updatedAt: Date }
+// document.id   — "abc123"
+// document.json — { id: 'abc123', title: 'Hello World', content: 'My first post.', ... }
 ```
 
 #### File Uploads
@@ -186,13 +198,11 @@ const file = new FileUpload({
   mimeType: 'image/png',
 });
 
-const document: DocumentDTO = await httpClient.create({
+const document: DocumentDTO = await client.create({
   slug: 'media',
   data: { alt: 'My image' },
   file: file,
 });
-
-// Outputs: { id: 'def456', json: { id: 'def456', alt: 'My image', filename: 'photo.png', mimeType: 'image/png', ... }, createdAt: Date, updatedAt: Date }
 ```
 
 ### Update by ID
@@ -200,7 +210,7 @@ const document: DocumentDTO = await httpClient.create({
 Updates a single document by ID. Supports file replacement.
 
 ```typescript
-async updateById(options: { slug: string; id: string; data: Json; file?: FileUpload }): Promise<DocumentDTO>
+async updateById(options: { slug: string; id: string; data: Json; file?: FileUpload; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
@@ -209,16 +219,15 @@ async updateById(options: { slug: string; id: string; data: Json; file?: FileUpl
 | `id` | `string` | Document ID. |
 | `data` | `Json` | Fields to update. |
 | `file` | `FileUpload` | Optional replacement file. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.updateById({
+const document: DocumentDTO = await client.updateById({
   slug: 'posts',
   id: '123',
   data: { title: 'Updated Title' },
 });
-
-// Outputs: { id: '123', json: { id: '123', title: 'Updated Title', ... }, createdAt: Date, updatedAt: Date }
 ```
 
 ### Bulk update
@@ -226,7 +235,7 @@ const document: DocumentDTO = await httpClient.updateById({
 Bulk-updates all documents matching a query. Supports file uploads.
 
 ```typescript
-async update(options: { slug: string; data: Json; query: QueryBuilder; file?: FileUpload }): Promise<PaginatedDocsDTO>
+async update(options: { slug: string; data: Json; query: QueryBuilder; file?: FileUpload; signal?: AbortSignal }): Promise<PaginatedDocsDTO>
 ```
 
 | Parameter | Type | Description |
@@ -235,19 +244,18 @@ async update(options: { slug: string; data: Json; query: QueryBuilder; file?: Fi
 | `data` | `Json` | Fields to update on all matching documents. |
 | `query` | `QueryBuilder` | Query to select documents to update. |
 | `file` | `FileUpload` | Optional file to upload. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
 const query = new QueryBuilder()
   .where({ field: 'status', operator: Operator.Equals, value: 'draft' });
 
-const result: PaginatedDocsDTO = await httpClient.update({
+const result: PaginatedDocsDTO = await client.update({
   slug: 'posts',
   data: { status: 'published' },
   query: query,
 });
-
-// Outputs: { docs: [DocumentDTO, ...], totalDocs: 3, totalPages: 1, page: 1, limit: 10, hasNextPage: false, hasPrevPage: false }
 ```
 
 ### Delete by ID
@@ -255,19 +263,18 @@ const result: PaginatedDocsDTO = await httpClient.update({
 Deletes a single document by ID.
 
 ```typescript
-async deleteById(options: { slug: string; id: string }): Promise<DocumentDTO>
+async deleteById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `id` | `string` | Document ID. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.deleteById({ slug: 'posts', id: '123' });
-
-// Outputs: { id: '123', json: { id: '123', title: 'Hello World', ... }, createdAt: Date, updatedAt: Date }
+const document: DocumentDTO = await client.deleteById({ slug: 'posts', id: '123' });
 ```
 
 ### Bulk delete
@@ -275,25 +282,24 @@ const document: DocumentDTO = await httpClient.deleteById({ slug: 'posts', id: '
 Bulk-deletes all documents matching a query.
 
 ```typescript
-async delete(options: { slug: string; query: QueryBuilder }): Promise<PaginatedDocsDTO>
+async delete(options: { slug: string; query: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `query` | `QueryBuilder` | Query to select documents to delete. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
 const query = new QueryBuilder()
   .where({ field: 'status', operator: Operator.Equals, value: 'archived' });
 
-const result: PaginatedDocsDTO = await httpClient.delete({
+const result: PaginatedDocsDTO = await client.delete({
   slug: 'posts',
   query: query,
 });
-
-// Outputs: { docs: [DocumentDTO, ...], totalDocs: 5, totalPages: 1, page: 1, limit: 10, hasNextPage: false, hasPrevPage: false }
 ```
 
 ---
@@ -305,18 +311,17 @@ const result: PaginatedDocsDTO = await httpClient.delete({
 Retrieves a global document.
 
 ```typescript
-async findGlobal(options: { slug: string }): Promise<DocumentDTO>
+async findGlobal(options: { slug: string; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Global slug. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.findGlobal({ slug: 'site-settings' });
-
-// Outputs: { id: '', json: { siteName: 'My Site', locale: 'en', ... }, createdAt: Date, updatedAt: Date }
+const document: DocumentDTO = await client.findGlobal({ slug: 'site-settings' });
 ```
 
 ### Update global
@@ -324,22 +329,21 @@ const document: DocumentDTO = await httpClient.findGlobal({ slug: 'site-settings
 Updates a global document.
 
 ```typescript
-async updateGlobal(options: { slug: string; data: Json }): Promise<DocumentDTO>
+async updateGlobal(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Global slug. |
 | `data` | `Json` | Fields to update. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.updateGlobal({
+const document: DocumentDTO = await client.updateGlobal({
   slug: 'site-settings',
   data: { siteName: 'My Site' },
 });
-
-// Outputs: { id: '', json: { siteName: 'My Site', ... }, createdAt: Date, updatedAt: Date }
 ```
 
 ---
@@ -351,22 +355,26 @@ const document: DocumentDTO = await httpClient.updateGlobal({
 Authenticates a user and returns a JWT token.
 
 ```typescript
-async login(options: { slug: string; data: Json }): Promise<LoginResultDTO>
+async login(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<LoginResultDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
 | `data` | `Json` | Credentials (e.g. `{ email, password }`). |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: LoginResultDTO = await httpClient.login({
+const result: LoginResultDTO = await client.login({
   slug: 'users',
   data: { email: 'user@example.com', password: 'secret' },
 });
 
-// Outputs: { token: 'eyJhbGciOi...', exp: 1700000000, user: DocumentDTO, message: 'Authentication Passed' }
+// result.token   — "eyJhbGciOi..."
+// result.exp     — 1700000000
+// result.user    — DocumentDTO
+// result.message — "Authentication Passed"
 ```
 
 ### Me
@@ -374,18 +382,23 @@ const result: LoginResultDTO = await httpClient.login({
 Retrieves the currently authenticated user.
 
 ```typescript
-async me(options: { slug: string }): Promise<MeResultDTO>
+async me(options: { slug: string; signal?: AbortSignal }): Promise<MeResultDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const me: MeResultDTO = await httpClient.me({ slug: 'users' });
+const me: MeResultDTO = await client.me({ slug: 'users' });
 
-// Outputs: { user: DocumentDTO, token: 'eyJhbGciOi...', exp: 1700000000, collection: 'users', strategy: 'local-jwt' }
+// me.user       — DocumentDTO
+// me.token      — "eyJhbGciOi..."
+// me.exp        — 1700000000
+// me.collection — "users"
+// me.strategy   — "local-jwt"
 ```
 
 ### Refresh token
@@ -393,18 +406,21 @@ const me: MeResultDTO = await httpClient.me({ slug: 'users' });
 Refreshes the current JWT token.
 
 ```typescript
-async refreshToken(options: { slug: string }): Promise<RefreshResultDTO>
+async refreshToken(options: { slug: string; signal?: AbortSignal }): Promise<RefreshResultDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: RefreshResultDTO = await httpClient.refreshToken({ slug: 'users' });
+const result: RefreshResultDTO = await client.refreshToken({ slug: 'users' });
 
-// Outputs: { refreshedToken: 'eyJhbGciOi...', exp: 1700003600, user: DocumentDTO }
+// result.refreshedToken — "eyJhbGciOi..."
+// result.exp            — 1700003600
+// result.user           — DocumentDTO
 ```
 
 ### Forgot password
@@ -412,22 +428,23 @@ const result: RefreshResultDTO = await httpClient.refreshToken({ slug: 'users' }
 Initiates the forgot-password flow.
 
 ```typescript
-async forgotPassword(options: { slug: string; data: Json }): Promise<MessageDTO>
+async forgotPassword(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<MessageDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
 | `data` | `Json` | Request body (e.g. `{ email }`). |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: MessageDTO = await httpClient.forgotPassword({
+const result: MessageDTO = await client.forgotPassword({
   slug: 'users',
   data: { email: 'user@example.com' },
 });
 
-// Outputs: { message: 'Success' }
+// result.message — "Success"
 ```
 
 ### Reset password
@@ -435,22 +452,24 @@ const result: MessageDTO = await httpClient.forgotPassword({
 Completes a password reset using a reset token.
 
 ```typescript
-async resetPassword(options: { slug: string; data: Json }): Promise<ResetPasswordResultDTO>
+async resetPassword(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<ResetPasswordResultDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
 | `data` | `Json` | Reset data (e.g. `{ token, password }`). |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: ResetPasswordResultDTO = await httpClient.resetPassword({
+const result: ResetPasswordResultDTO = await client.resetPassword({
   slug: 'users',
   data: { token: 'reset-token', password: 'newPassword123' },
 });
 
-// Outputs: { user: DocumentDTO, token: 'eyJhbGciOi...' }
+// result.user  — DocumentDTO
+// result.token — "eyJhbGciOi..."
 ```
 
 ### Verify email
@@ -458,22 +477,23 @@ const result: ResetPasswordResultDTO = await httpClient.resetPassword({
 Verifies a user's email address.
 
 ```typescript
-async verifyEmail(options: { slug: string; token: string }): Promise<MessageDTO>
+async verifyEmail(options: { slug: string; token: string; signal?: AbortSignal }): Promise<MessageDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
 | `token` | `string` | Email verification token. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: MessageDTO = await httpClient.verifyEmail({
+const result: MessageDTO = await client.verifyEmail({
   slug: 'users',
   token: 'verification-token',
 });
 
-// Outputs: { message: 'Email verified successfully.' }
+// result.message — "Email verified successfully."
 ```
 
 ### Logout
@@ -481,18 +501,19 @@ const result: MessageDTO = await httpClient.verifyEmail({
 Logs out the currently authenticated user.
 
 ```typescript
-async logout(options: { slug: string }): Promise<MessageDTO>
+async logout(options: { slug: string; signal?: AbortSignal }): Promise<MessageDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: MessageDTO = await httpClient.logout({ slug: 'users' });
+const result: MessageDTO = await client.logout({ slug: 'users' });
 
-// Outputs: { message: 'You have been logged out successfully.' }
+// result.message — "You have been logged out successfully."
 ```
 
 ### Unlock
@@ -500,53 +521,52 @@ const result: MessageDTO = await httpClient.logout({ slug: 'users' });
 Unlocks a user account that has been locked due to failed login attempts.
 
 ```typescript
-async unlock(options: { slug: string; data: Json }): Promise<MessageDTO>
+async unlock(options: { slug: string; data: Json; signal?: AbortSignal }): Promise<MessageDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Auth-enabled collection slug. |
 | `data` | `Json` | Unlock data (e.g. `{ email }`). |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: MessageDTO = await httpClient.unlock({
+const result: MessageDTO = await client.unlock({
   slug: 'users',
   data: { email: 'user@example.com' },
 });
 
-// Outputs: { message: 'Success' }
+// result.message — "Success"
 ```
 
 ### JWT Authentication
 
-#### Example
 ```typescript
-import { HttpClient, JwtAuth } from 'payload-cms-http-client';
+import { PayloadSDK, JwtAuth } from 'payload-cms-http-client';
 
-const httpClient = new HttpClient({ baseUrl: 'http://localhost:3000' });
+const client = new PayloadSDK({ baseUrl: 'http://localhost:3000' });
 
 // Login to get a token
-const loginResult: LoginResultDTO = await httpClient.login({
+const loginResult: LoginResultDTO = await client.login({
   slug: 'users',
   data: { email: 'user@example.com', password: 'secret' },
 });
 
 // Set the token on the client
-httpClient.setJwtAuth({ auth: new JwtAuth({ token: loginResult.token }) });
+client.setJwtAuth({ auth: new JwtAuth({ token: loginResult.token }) });
 
 // Authenticated requests now include the Bearer token
-const me: MeResultDTO = await httpClient.me({ slug: 'users' });
+const me: MeResultDTO = await client.me({ slug: 'users' });
 ```
 
 ### API Key Authentication
 
-#### Example
 ```typescript
-import { HttpClient, ApiKeyAuth } from 'payload-cms-http-client';
+import { PayloadSDK, ApiKeyAuth } from 'payload-cms-http-client';
 
-const httpClient = new HttpClient({ baseUrl: 'http://localhost:3000' });
-httpClient.setApiKeyAuth({ auth: new ApiKeyAuth({ collectionSlug: 'users', apiKey: 'your-api-key-here' }) });
+const client = new PayloadSDK({ baseUrl: 'http://localhost:3000' });
+client.setApiKeyAuth({ auth: new ApiKeyAuth({ collectionSlug: 'users', apiKey: 'your-api-key-here' }) });
 ```
 
 #### ApiKeyAuth
@@ -576,19 +596,18 @@ Both implement `IAuthCredential` internally. Use `setApiKeyAuth()` or `setJwtAut
 Retrieves a paginated list of versions for a collection.
 
 ```typescript
-async findVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO>
+async findVersions(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `query` | `QueryBuilder` | Optional query parameters. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: PaginatedDocsDTO = await httpClient.findVersions({ slug: 'posts' });
-
-// Outputs: { docs: [DocumentDTO, ...], totalDocs: 12, totalPages: 2, page: 1, limit: 10, hasNextPage: true, hasPrevPage: false }
+const result: PaginatedDocsDTO = await client.findVersions({ slug: 'posts' });
 ```
 
 ### Find version by ID
@@ -596,19 +615,18 @@ const result: PaginatedDocsDTO = await httpClient.findVersions({ slug: 'posts' }
 Retrieves a single version by ID.
 
 ```typescript
-async findVersionById(options: { slug: string; id: string }): Promise<DocumentDTO>
+async findVersionById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `id` | `string` | Version ID. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.findVersionById({ slug: 'posts', id: 'version-id' });
-
-// Outputs: { id: 'version-id', json: { id: 'version-id', version: { title: 'Hello World', ... }, ... }, createdAt: Date, updatedAt: Date }
+const document: DocumentDTO = await client.findVersionById({ slug: 'posts', id: 'version-id' });
 ```
 
 ### Restore version
@@ -616,19 +634,18 @@ const document: DocumentDTO = await httpClient.findVersionById({ slug: 'posts', 
 Restores a collection document to a specific version.
 
 ```typescript
-async restoreVersion(options: { slug: string; id: string }): Promise<DocumentDTO>
+async restoreVersion(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Collection slug. |
 | `id` | `string` | Version ID to restore. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.restoreVersion({ slug: 'posts', id: 'version-id' });
-
-// Outputs: { id: '123', json: { id: '123', title: 'Restored Title', ... }, createdAt: Date, updatedAt: Date }
+const document: DocumentDTO = await client.restoreVersion({ slug: 'posts', id: 'version-id' });
 ```
 
 ### Find global versions
@@ -636,19 +653,18 @@ const document: DocumentDTO = await httpClient.restoreVersion({ slug: 'posts', i
 Retrieves a paginated list of versions for a global.
 
 ```typescript
-async findGlobalVersions(options: { slug: string; query?: QueryBuilder }): Promise<PaginatedDocsDTO>
+async findGlobalVersions(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Global slug. |
 | `query` | `QueryBuilder` | Optional query parameters. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const result: PaginatedDocsDTO = await httpClient.findGlobalVersions({ slug: 'site-settings' });
-
-// Outputs: { docs: [DocumentDTO, ...], totalDocs: 8, totalPages: 1, page: 1, limit: 10, hasNextPage: false, hasPrevPage: false }
+const result: PaginatedDocsDTO = await client.findGlobalVersions({ slug: 'site-settings' });
 ```
 
 ### Find global version by ID
@@ -656,22 +672,21 @@ const result: PaginatedDocsDTO = await httpClient.findGlobalVersions({ slug: 'si
 Retrieves a single global version by ID.
 
 ```typescript
-async findGlobalVersionById(options: { slug: string; id: string }): Promise<DocumentDTO>
+async findGlobalVersionById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Global slug. |
 | `id` | `string` | Version ID. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.findGlobalVersionById({
+const document: DocumentDTO = await client.findGlobalVersionById({
   slug: 'site-settings',
   id: 'version-id',
 });
-
-// Outputs: { id: 'version-id', json: { id: 'version-id', version: { siteName: 'Old Name', ... }, ... }, createdAt: Date, updatedAt: Date }
 ```
 
 ### Restore global version
@@ -679,22 +694,21 @@ const document: DocumentDTO = await httpClient.findGlobalVersionById({
 Restores a global document to a specific version.
 
 ```typescript
-async restoreGlobalVersion(options: { slug: string; id: string }): Promise<DocumentDTO>
+async restoreGlobalVersion(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO>
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `slug` | `string` | Global slug. |
 | `id` | `string` | Version ID to restore. |
+| `signal` | `AbortSignal` | Optional abort signal for cancellation. |
 
 #### Example
 ```typescript
-const document: DocumentDTO = await httpClient.restoreGlobalVersion({
+const document: DocumentDTO = await client.restoreGlobalVersion({
   slug: 'site-settings',
   id: 'version-id',
 });
-
-// Outputs: { id: '', json: { siteName: 'Restored Name', ... }, createdAt: Date, updatedAt: Date }
 ```
 
 ---
@@ -704,12 +718,18 @@ const document: DocumentDTO = await httpClient.restoreGlobalVersion({
 Escape hatch for custom endpoints. Returns raw JSON instead of a DTO.
 
 ```typescript
-async request(options: {
+async request(config: RequestConfig, signal?: AbortSignal): Promise<Json | undefined>
+```
+
+`RequestConfig` groups all request options:
+
+```typescript
+type RequestConfig = {
   method: HttpMethod;
   path: string;
   body?: Json;
   query?: QueryBuilder;
-}): Promise<Json | undefined>
+};
 ```
 
 | Parameter | Type | Description |
@@ -723,13 +743,11 @@ async request(options: {
 ```typescript
 import { HttpMethod } from 'payload-cms-http-client';
 
-const result: Json | undefined = await httpClient.request({
+const result: Json | undefined = await client.request({
   method: HttpMethod.POST,
   path: '/api/custom-endpoint',
   body: { key: 'value' },
 });
-
-// Outputs: { success: true, data: { ... } }
 ```
 
 ---
@@ -750,9 +768,9 @@ const query = new QueryBuilder()
   .limit({ value: 10 })
   .page({ value: 2 });
 
-const result = await httpClient.find({ slug: 'posts', query: query });
+const result = await client.find({ slug: 'posts', query: query });
 
-// Outputs: ?where[status][equals]=published&sort=createdAt&limit=10&page=2
+// Serializes to: ?where[status][equals]=published&sort=createdAt&limit=10&page=2
 ```
 
 | Method | Parameters | Description |
@@ -785,14 +803,11 @@ const query = new QueryBuilder()
       .where({ field: 'category', operator: Operator.Equals, value: 'blog' });
   }});
 
-const result = await httpClient.find({ slug: 'posts', query: query });
-
-// Outputs: ?where[status][equals]=published&where[or][0][category][equals]=news&where[or][1][category][equals]=blog
+// Serializes to: ?where[status][equals]=published&where[or][0][category][equals]=news&where[or][1][category][equals]=blog
 ```
 
 Nested AND groups work the same way:
 
-#### Example
 ```typescript
 const query = new QueryBuilder()
   .where({ field: 'status', operator: Operator.Equals, value: 'published' })
@@ -823,7 +838,7 @@ const query = new QueryBuilder()
       .where({ on: 'comments', field: 'status', operator: Operator.Equals, value: 'approved' });
   }});
 
-const result = await httpClient.find({ slug: 'posts', query: query });
+const result = await client.find({ slug: 'posts', query: query });
 ```
 
 | Method | Parameters | Description |
@@ -845,7 +860,7 @@ const result = await httpClient.find({ slug: 'posts', query: query });
 
 The included DTOs represent the **lowest common denominator** of a Payload CMS response. Because Payload collections are schema-defined by the consumer, this library cannot know the shape of your documents at compile time. Instead, `DocumentDTO` captures the universal fields (`id`, `createdAt`, `updatedAt`) and exposes the full response as a raw `json` dictionary.
 
-These DTOs are **not intended to be your final domain models**. They serve as a transport-level representation that you should map into richer, typed models in your own application. For example:
+These DTOs are **not intended to be your final domain models**. They serve as a transport-level representation that you should map into richer, typed models in your own application:
 
 ```typescript
 // Your domain model
@@ -853,7 +868,6 @@ interface BlogPost {
   id: string;
   title: string;
   content: string;
-  author: string;
   publishedAt: Date;
 }
 
@@ -863,12 +877,11 @@ function toBlogPost(dto: DocumentDTO): BlogPost {
     id: dto.id,
     title: dto.json['title'] as string,
     content: dto.json['content'] as string,
-    author: dto.json['author'] as string,
     publishedAt: new Date(dto.json['publishedAt'] as string),
   };
 }
 
-const dto = await httpClient.findById({ slug: 'posts', id: '123' });
+const dto = await client.findById({ slug: 'posts', id: '123' });
 const post: BlogPost = toBlogPost(dto);
 ```
 
@@ -913,7 +926,7 @@ Returned by paginated operations (`find`, `update`, `delete`, `findVersions`).
 
 ## Error Handling
 
-Thrown when a Payload CMS API request fails with a non-2xx status code.
+`PayloadError` is thrown when a Payload CMS API request fails with a non-2xx status code.
 
 ```typescript
 class PayloadError extends Error {
@@ -933,14 +946,15 @@ class PayloadError extends Error {
 import { PayloadError } from 'payload-cms-http-client';
 
 try {
-  const document: DocumentDTO = await httpClient.findById({ slug: 'posts', id: 'nonexistent' });
-} 
+  const document: DocumentDTO = await client.findById({ slug: 'posts', id: 'nonexistent' });
+}
 catch (error) {
   if (error instanceof PayloadError) {
-    // Handle Payload-specific errors
-  } 
+    console.log(`Status: ${error.statusCode}`);
+    // error.cause contains the parsed JSON error body if the server returned one
+  }
   else {
-    // Handle Exceptions
+    // Network failure, timeout, or parsing error
   }
 }
 ```
@@ -999,4 +1013,3 @@ enum HttpMethod {
   DELETE = 'DELETE',
 }
 ```
-

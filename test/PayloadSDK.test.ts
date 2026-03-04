@@ -17,7 +17,7 @@ let loginToken: string = '';
 // ── CRUD Tests (posts) ─────────────────────────────────────────
 
 harness.add('create() should create a post and return DocumentDTO', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.create({
     slug: 'posts',
@@ -33,7 +33,7 @@ harness.add('create() should create a post and return DocumentDTO', async () => 
 });
 
 harness.add('findById() should retrieve the created post', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.findById({ slug: 'posts', id: createdPostId });
 
@@ -42,7 +42,7 @@ harness.add('findById() should retrieve the created post', async () => {
 });
 
 harness.add('find() should return a paginated list containing the post', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.find({
     slug: 'posts',
@@ -55,7 +55,7 @@ harness.add('find() should return a paginated list containing the post', async (
 });
 
 harness.add('count() should return the correct document count', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const total = await client.count({
     slug: 'posts',
@@ -68,7 +68,7 @@ harness.add('count() should return the correct document count', async () => {
 // ── QueryBuilder Integration Tests ──────────────────────────────
 
 harness.add('find() with limit should constrain returned documents', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.find({
     slug: 'posts',
@@ -80,7 +80,7 @@ harness.add('find() with limit should constrain returned documents', async () =>
 });
 
 harness.add('find() with page should return the specified page', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.find({
     slug: 'posts',
@@ -92,7 +92,7 @@ harness.add('find() with page should return the specified page', async () => {
 });
 
 harness.add('find() with sort should accept sort parameter', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.find({
     slug: 'posts',
@@ -105,7 +105,7 @@ harness.add('find() with sort should accept sort parameter', async () => {
 // ── CRUD Tests (continued) ──────────────────────────────────────
 
 harness.add('updateById() should update a single post', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.updateById({
     slug: 'posts',
@@ -119,7 +119,7 @@ harness.add('updateById() should update a single post', async () => {
 });
 
 harness.add('update() bulk should update matching posts', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.update({
     slug: 'posts',
@@ -134,7 +134,7 @@ harness.add('update() bulk should update matching posts', async () => {
 // ── Version Tests (posts) ──────────────────────────────────────
 
 harness.add('findVersions() should return versions for the post collection', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.findVersions({
     slug: 'posts',
@@ -148,7 +148,7 @@ harness.add('findVersions() should return versions for the post collection', asy
 });
 
 harness.add('findVersionById() should return a specific version', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.findVersionById({ slug: 'posts', id: versionId });
 
@@ -157,7 +157,7 @@ harness.add('findVersionById() should return a specific version', async () => {
 });
 
 harness.add('restoreVersion() should restore a post to a previous version', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.restoreVersion({ slug: 'posts', id: versionId });
 
@@ -167,7 +167,7 @@ harness.add('restoreVersion() should restore a post to a previous version', asyn
 // ── Global Tests (site-settings) ───────────────────────────────
 
 harness.add('updateGlobal() should update the site settings', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.updateGlobal({
     slug: 'site-settings',
@@ -179,7 +179,7 @@ harness.add('updateGlobal() should update the site settings', async () => {
 });
 
 harness.add('findGlobal() should retrieve the site settings', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.findGlobal({ slug: 'site-settings' });
 
@@ -192,7 +192,7 @@ harness.add('findGlobal() should retrieve the site settings', async () => {
 let globalVersionId: string = '';
 
 harness.add('findGlobalVersions() should return versions for site-settings', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   // Update again to ensure we have at least one version
   await client.updateGlobal({
@@ -209,7 +209,7 @@ harness.add('findGlobalVersions() should return versions for site-settings', asy
 });
 
 harness.add('findGlobalVersionById() should return a specific global version', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.findGlobalVersionById({ slug: 'site-settings', id: globalVersionId });
 
@@ -218,7 +218,7 @@ harness.add('findGlobalVersionById() should return a specific global version', a
 });
 
 harness.add('restoreGlobalVersion() should restore site-settings to a previous version', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.restoreGlobalVersion({ slug: 'site-settings', id: globalVersionId });
 
@@ -228,7 +228,7 @@ harness.add('restoreGlobalVersion() should restore site-settings to a previous v
 // ── Auth Tests (users) ─────────────────────────────────────────
 
 harness.add('login() should authenticate and return a token', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.login({
     slug: 'users',
@@ -245,7 +245,7 @@ harness.add('login() should authenticate and return a token', async () => {
 });
 
 harness.add('me() should return the authenticated user', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   client.setJwtAuth({ auth: new lib.JwtAuth({ token: loginToken }) });
 
   const result = await client.me({ slug: 'users' });
@@ -256,7 +256,7 @@ harness.add('me() should return the authenticated user', async () => {
 });
 
 harness.add('refreshToken() should return a new token', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   client.setJwtAuth({ auth: new lib.JwtAuth({ token: loginToken }) });
 
   const result = await client.refreshToken({ slug: 'users' });
@@ -267,7 +267,7 @@ harness.add('refreshToken() should return a new token', async () => {
 });
 
 harness.add('forgotPassword() should return a message', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.forgotPassword({
     slug: 'users',
@@ -278,7 +278,7 @@ harness.add('forgotPassword() should return a message', async () => {
 });
 
 harness.add('logout() should return a message', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   // Login first to get a valid session
   const loginResult = await client.login({
@@ -294,7 +294,7 @@ harness.add('logout() should return a message', async () => {
 });
 
 harness.add('unlock() should return a message', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.unlock({
     slug: 'users',
@@ -305,7 +305,7 @@ harness.add('unlock() should return a message', async () => {
 });
 
 harness.add('me() without auth should return an empty user', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.me({ slug: 'users' });
 
@@ -314,7 +314,7 @@ harness.add('me() without auth should return an empty user', async () => {
 });
 
 harness.add('refreshToken() without auth should throw PayloadError', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   let caught: lib.PayloadError | undefined;
 
   try {
@@ -330,7 +330,7 @@ harness.add('refreshToken() without auth should throw PayloadError', async () =>
 });
 
 harness.add('setJwtAuth() should enable auth after construction', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   // Without auth, me() returns an empty user
   const before = await client.me({ slug: 'users' });
@@ -347,7 +347,7 @@ harness.add('setJwtAuth() should enable auth after construction', async () => {
 // ── Error Path Tests ────────────────────────────────────────────
 
 harness.add('login() with invalid credentials should throw PayloadError', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   let threw = false;
 
   try {
@@ -364,7 +364,7 @@ harness.add('login() with invalid credentials should throw PayloadError', async 
 });
 
 harness.add('findById() with non-existent ID should throw PayloadError', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   let caught: lib.PayloadError | undefined;
 
   try {
@@ -379,7 +379,7 @@ harness.add('findById() with non-existent ID should throw PayloadError', async (
 });
 
 harness.add('updateById() with non-existent ID should throw PayloadError', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   let caught: lib.PayloadError | undefined;
 
   try {
@@ -394,7 +394,7 @@ harness.add('updateById() with non-existent ID should throw PayloadError', async
 });
 
 harness.add('deleteById() with non-existent ID should throw PayloadError', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   let caught: lib.PayloadError | undefined;
 
   try {
@@ -409,7 +409,7 @@ harness.add('deleteById() with non-existent ID should throw PayloadError', async
 });
 
 harness.add('PayloadError should expose statusCode and cause from failed request', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   let caught: lib.PayloadError | undefined;
 
   try {
@@ -431,7 +431,7 @@ harness.add('PayloadError should expose statusCode and cause from failed request
 // ── ApiKeyAuth Tests ────────────────────────────────────────────
 
 harness.add('ApiKeyAuth should authenticate and allow creating a post', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   client.setApiKeyAuth({ auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }) });
 
   const result = await client.create({
@@ -444,7 +444,7 @@ harness.add('ApiKeyAuth should authenticate and allow creating a post', async ()
 });
 
 harness.add('ApiKeyAuth should authenticate and allow reading via me()', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
   client.setApiKeyAuth({ auth: new lib.ApiKeyAuth({ collectionSlug: 'users', apiKey: TEST_API_KEY }) });
 
   const result = await client.me({ slug: 'users' });
@@ -456,7 +456,7 @@ harness.add('ApiKeyAuth should authenticate and allow reading via me()', async (
 // ── File Upload Tests (media) ──────────────────────────────────
 
 harness.add('create() with file should upload and return DocumentDTO', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   // 1x1 red PNG (68 bytes)
   const pngBytes = new Uint8Array([
@@ -487,7 +487,7 @@ harness.add('create() with file should upload and return DocumentDTO', async () 
 });
 
 harness.add('updateById() with file should replace the file on a media document', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   // Different 1x1 PNG (blue pixel)
   const pngBytes = new Uint8Array([
@@ -516,7 +516,7 @@ harness.add('updateById() with file should replace the file on a media document'
 });
 
 harness.add('deleteById() should delete the test media document', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.deleteById({ slug: 'media', id: createdMediaId });
 
@@ -526,7 +526,7 @@ harness.add('deleteById() should delete the test media document', async () => {
 // ── Request Escape Hatch Tests ─────────────────────────────────
 
 harness.add('request() GET should return raw JSON', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.request({
     method: lib.HttpMethod.GET,
@@ -538,7 +538,7 @@ harness.add('request() GET should return raw JSON', async () => {
 });
 
 harness.add('request() POST with body should create and return raw JSON', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.request({
     method: lib.HttpMethod.POST,
@@ -551,7 +551,7 @@ harness.add('request() POST with body should create and return raw JSON', async 
 });
 
 harness.add('request() GET with query should append query string', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.request({
     method: lib.HttpMethod.GET,
@@ -566,7 +566,7 @@ harness.add('request() GET with query should append query string', async () => {
 // ── Cleanup ────────────────────────────────────────────────────
 
 harness.add('cleanup: delete the test post', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.deleteById({ slug: 'posts', id: createdPostId });
 
@@ -574,7 +574,7 @@ harness.add('cleanup: delete the test post', async () => {
 });
 
 harness.add('cleanup: delete any remaining test posts', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.delete({
     slug: 'posts',
@@ -585,7 +585,7 @@ harness.add('cleanup: delete any remaining test posts', async () => {
 });
 
 harness.add('cleanup: delete any remaining test media', async () => {
-  const client = new lib.HttpClient({ baseUrl: BASE_URL });
+  const client = new lib.PayloadSDK({ baseUrl: BASE_URL });
 
   const result = await client.delete({
     slug: 'media',
@@ -595,6 +595,6 @@ harness.add('cleanup: delete any remaining test media', async () => {
   TestHarness.assertTrue(Array.isArray(result.docs));
 });
 
-export async function testHttpClient() {
-  await harness.run('Running HttpClient integration tests...\n');
+export async function testPayloadSDK() {
+  await harness.run('Running PayloadSDK integration tests...\n');
 }

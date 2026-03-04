@@ -1,7 +1,7 @@
-import { testHttpClient } from './HttpClient.test.ts';
+import { testPayloadSDK } from './PayloadSDK.test.ts';
 
 async function main() {
-  await testHttpClient();
+  await testPayloadSDK();
 }
 
 main();

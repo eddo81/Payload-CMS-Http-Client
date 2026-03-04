@@ -1,4 +1,5 @@
-export * from './lib/public/HttpClient.js';
+export * from './lib/public/PayloadSDK.js';
+export * from './lib/public/config/RequestConfig.js';
 export * from './lib/public/JoinBuilder.js';
 export * from './lib/public/WhereBuilder.js';
 export * from './lib/public/QueryBuilder.js';
