@@ -6,7 +6,7 @@ import { MeResultDTO } from "./models/auth/MeResultDTO.js";
 import { RefreshResultDTO } from "./models/auth/RefreshResultDTO.js";
 import { ResetPasswordResultDTO } from "./models/auth/ResetPasswordResultDTO.js";
 import { MessageDTO } from "./models/auth/MessageDTO.js";
-import { PayloadError } from "./PayloadError.js";
+import { PayloadError } from "./errors/PayloadError.js";
 import { QueryBuilder } from "./QueryBuilder.js";
 import { QueryStringEncoder } from "../internal/utils/QueryStringEncoder.js";
 import { ApiKeyAuth } from "./config/ApiKeyAuth.js";
@@ -138,7 +138,7 @@ export class PayloadSDK {
       requestInit.body = JsonParser.stringify(body);
     }
 
-    return this._fetch({ url, config: requestInit, signal });
+    return this._request({ url, config: requestInit, signal });
   }
 
  /**
@@ -181,7 +181,7 @@ export class PayloadSDK {
   * @throws {PayloadError} On non-2xx responses.
   * @throws {Error} On network, parsing, or abort failures.
   */
-  private async _fetch(options: { url: string; config?: RequestInit; signal?: AbortSignal }): Promise<Json | undefined> {
+  private async _request(options: { url: string; config?: RequestInit; signal?: AbortSignal }): Promise<Json | undefined> {
     const { url, config = {}, signal } = options;
 
     let response: Response;
@@ -226,7 +226,7 @@ export class PayloadSDK {
       return json;
     }
     catch (error: any) {
-      let message: string = '[PayloadError] Fetch failed';
+      let message: string = '[PayloadError] Request failed';
 
       if (error instanceof SyntaxError) {
         message = `[PayloadError] Failed to parse JSON response`;
@@ -260,7 +260,7 @@ export class PayloadSDK {
   async find(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
     const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}`, query });
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -279,7 +279,7 @@ export class PayloadSDK {
   async findById(options: { slug: string; id: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<DocumentDTO> {
     const { slug, id, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`, query });
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -305,7 +305,7 @@ export class PayloadSDK {
       body: file !== undefined ? FormDataBuilder.build({ file, data }) : JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -329,7 +329,7 @@ export class PayloadSDK {
       method: method,
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -353,7 +353,7 @@ export class PayloadSDK {
       method: method,
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -380,7 +380,7 @@ export class PayloadSDK {
       body: file !== undefined ? FormDataBuilder.build({ file, data }) : JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -407,7 +407,7 @@ export class PayloadSDK {
       body: file !== undefined ? FormDataBuilder.build({ file, data }) : JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -425,7 +425,7 @@ export class PayloadSDK {
   async count(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<number> {
     const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/count`, query });
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = TotalDocsDTO.fromJson(json);
 
     return dto.totalDocs;
@@ -442,7 +442,7 @@ export class PayloadSDK {
   async findGlobal(options: { slug: string; signal?: AbortSignal }): Promise<DocumentDTO> {
     const { slug, signal } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}`;
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -467,7 +467,7 @@ export class PayloadSDK {
       body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['result'] as Json ?? {});
 
     return dto;
@@ -485,7 +485,7 @@ export class PayloadSDK {
   async findVersions(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
     const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions`, query });
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -503,7 +503,7 @@ export class PayloadSDK {
   async findVersionById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO> {
     const { slug, id, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -527,7 +527,7 @@ export class PayloadSDK {
       method: method,
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -545,7 +545,7 @@ export class PayloadSDK {
   async findGlobalVersions(options: { slug: string; query?: QueryBuilder; signal?: AbortSignal }): Promise<PaginatedDocsDTO> {
     const { slug, query, signal } = options;
     const url = this._appendQueryString({ url: `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions`, query });
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = PaginatedDocsDTO.fromJson(json);
 
     return dto;
@@ -563,7 +563,7 @@ export class PayloadSDK {
   async findGlobalVersionById(options: { slug: string; id: string; signal?: AbortSignal }): Promise<DocumentDTO> {
     const { slug, id, signal } = options;
     const url = `${this._baseUrl}/api/globals/${encodeURIComponent(slug)}/versions/${encodeURIComponent(id)}`;
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json);
 
     return dto;
@@ -587,7 +587,7 @@ export class PayloadSDK {
       method: method,
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = DocumentDTO.fromJson(json['doc'] as Json ?? {});
 
     return dto;
@@ -612,7 +612,7 @@ export class PayloadSDK {
       body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = LoginResultDTO.fromJson(json);
 
     return dto;
@@ -629,7 +629,7 @@ export class PayloadSDK {
   async me(options: { slug: string; signal?: AbortSignal }): Promise<MeResultDTO> {
     const { slug, signal } = options;
     const url = `${this._baseUrl}/api/${encodeURIComponent(slug)}/me`;
-    const json = await this._fetch({ url, signal }) ?? {};
+    const json = await this._request({ url, signal }) ?? {};
     const dto = MeResultDTO.fromJson(json);
 
     return dto;
@@ -652,7 +652,7 @@ export class PayloadSDK {
       method: method,
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = RefreshResultDTO.fromJson(json);
 
     return dto;
@@ -677,7 +677,7 @@ export class PayloadSDK {
       body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -702,7 +702,7 @@ export class PayloadSDK {
       body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = ResetPasswordResultDTO.fromJson(json);
 
     return dto;
@@ -726,7 +726,7 @@ export class PayloadSDK {
       method: method,
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -749,7 +749,7 @@ export class PayloadSDK {
       method: method,
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;
@@ -774,7 +774,7 @@ export class PayloadSDK {
       body: JsonParser.stringify(data),
     };
 
-    const json = await this._fetch({ url, config, signal }) ?? {};
+    const json = await this._request({ url, config, signal }) ?? {};
     const dto = MessageDTO.fromJson(json);
 
     return dto;

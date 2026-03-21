@@ -931,7 +931,10 @@ Returned by paginated operations (`find`, `update`, `delete`, `findVersions`).
 ```typescript
 class PayloadError extends Error {
   readonly statusCode: number;
-  readonly response?: Response;
+  readonly response: Response | undefined;
+  readonly cause: unknown;
+
+  getDetails(): ErrorDetail[]
 }
 ```
 
@@ -942,6 +945,23 @@ class PayloadError extends Error {
 | `message` | `string` | Error message. |
 | `cause` | `unknown` | The parsed JSON error body (if available). |
 
+### getDetails()
+
+Extracts structured error entries from the response body. Navigates `cause["errors"]` for validation-style errors (e.g. duplicate email, missing required field), or falls back to a top-level `cause["message"]` for simpler error shapes (e.g. auth errors). Returns an empty array if no recognisable error structure is found.
+
+```typescript
+getDetails(): ErrorDetail[]
+```
+
+### ErrorDetail
+
+Represents a single error entry returned by `getDetails()`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `message` | `string` | The human-readable error message. |
+| `field` | `string \| undefined` | The field name associated with the error, if any. |
+
 ```typescript
 import { PayloadError } from 'payload-cms-http-client';
 
@@ -951,7 +971,10 @@ try {
 catch (error) {
   if (error instanceof PayloadError) {
     console.log(`Status: ${error.statusCode}`);
-    // error.cause contains the parsed JSON error body if the server returned one
+
+    for (const detail of error.getDetails()) {
+      console.log(`${detail.field ?? 'general'}: ${detail.message}`);
+    }
   }
   else {
     // Network failure, timeout, or parsing error
