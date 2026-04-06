@@ -1,13 +1,15 @@
 import type { Operator } from "../enums/Operator.js";
 import type { JsonValue } from "../../types/Json.js";
 import { WhereBuilder } from "./WhereBuilder.js";
+import { SelectBuilder } from "./SelectBuilder.js";
 import { JoinBuilder } from "./JoinBuilder.js";
 import type { Json } from "../../types/Json.js";
 
 /**
  * Fluent builder for Payload CMS REST API query parameters.
  *
- * Delegates filtering to {@link WhereBuilder} and
+ * Delegates filtering to {@link WhereBuilder},
+ * field selection to {@link SelectBuilder}, and
  * join configuration to {@link JoinBuilder}.
  */
 export class QueryBuilder {
@@ -17,9 +19,9 @@ export class QueryBuilder {
   private _depth?: number;
   private _locale?: string;
   private _fallbackLocale?: string;
-  private _select?: string;
   private _populate?: string;
   private readonly _whereBuilder: WhereBuilder = new WhereBuilder();
+  private readonly _selectBuilder: SelectBuilder = new SelectBuilder();
   private readonly _joinBuilder: JoinBuilder = new JoinBuilder();
 
   /**
@@ -136,10 +138,11 @@ export class QueryBuilder {
   }
 
   /**
-   * Specifies which fields to include in the result.
+   * Marks fields for inclusion in the response.
    *
-   * Supports dot notation for nested selections
-   * (e.g. `['title', 'author.name']`).
+   * Use dot notation for nested paths (e.g. `'group.number'`).
+   *
+   * Delegates to the internal {@link SelectBuilder}.
    *
    * @param {string[]} options.fields - Field names to include.
    *
@@ -148,12 +151,26 @@ export class QueryBuilder {
   select(options: { fields: string[] }): this {
     const { fields } = options;
 
-    if (!this._select) {
-      this._select = fields.join(',');
-    }
-    else {
-      this._select += `,${fields.join(',')}`;
-    }
+    this._selectBuilder.select({ fields });
+
+    return this;
+  }
+
+  /**
+   * Marks fields for exclusion from the response.
+   *
+   * Use dot notation for nested paths (e.g. `'group.number'`).
+   *
+   * Delegates to the internal {@link SelectBuilder}.
+   *
+   * @param {string[]} options.fields - Field names to exclude.
+   *
+   * @returns {this} The current builder for chaining.
+   */
+  exclude(options: { fields: string[] }): this {
+    const { fields } = options;
+
+    this._selectBuilder.exclude({ fields });
 
     return this;
   }
@@ -248,6 +265,7 @@ export class QueryBuilder {
    */
   build(): Json {
     const where: Json | undefined = this._whereBuilder.build();
+    const select: Json | undefined = this._selectBuilder.build();
     const result: Json = {};
 
     if (this._limit !== undefined) {
@@ -274,8 +292,8 @@ export class QueryBuilder {
       result['fallback-locale'] = this._fallbackLocale;
     }
 
-    if (this._select !== undefined) {
-      result.select = this._select;
+    if (select !== undefined) {
+      result.select = select;
     }
 
     if (this._populate !== undefined) {

@@ -5,17 +5,6 @@ import { TestHarness, Normalize } from './TestHarness.ts';
 const encoder = new QueryStringEncoder({ addQueryPrefix: false });
 const harness = new TestHarness();
 
-harness.add('select() should serialize as comma-separated list', () => {
-  const params = new lib.QueryBuilder()
-    .select({ fields: ['title', 'author'] })
-    .build();
-
-  const actual = encoder.stringify({ obj: params });
-  const expected = 'select=title,author';
-
-  TestHarness.assertEqual(actual, expected);
-});
-
 harness.add('sort() and sortByDescending() should serialize as comma-separated list', () => {
   const params = new lib.QueryBuilder()
     .sort({ field: 'date' })

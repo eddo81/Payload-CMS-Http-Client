@@ -26,8 +26,9 @@ public/                    # Consumer-facing API surface (exported, 1:1 portable
 │   ├── collection/        # Collection DTOs
 │   └── errors/            # Error DTOs (ErrorResultDTO)
 ├── query/                 # Fluent query builders
-│   ├── QueryBuilder.ts    # Facade over WhereBuilder + JoinBuilder
+│   ├── QueryBuilder.ts    # Facade over WhereBuilder + SelectBuilder + JoinBuilder
 │   ├── WhereBuilder.ts    # Where clause composition
+│   ├── SelectBuilder.ts   # Field inclusion/exclusion (delegates to SelectClause)
 │   └── JoinBuilder.ts     # Join clause composition
 ├── upload/                # File upload (FileUpload)
 ├── PayloadError.ts        # Structured error type
@@ -35,7 +36,9 @@ public/                    # Consumer-facing API surface (exported, 1:1 portable
 internal/                  # Internal implementation (not exported, 1:1 portable)
 ├── contracts/             # Internal interfaces (IClause, IAuthCredential, IFileUpload)
 ├── upload/                # FormDataBuilder
-└── utils/                 # Utilities (QueryStringEncoder)
+├── utils/                 # Utilities (QueryStringEncoder)
+├── SelectClause.ts        # Single field-path clause (include/exclude)
+├── WhereClause.ts, AndClause.ts, OrClause.ts, JoinClause.ts
 index.ts                   # Barrel export (project root)
 ```
 

@@ -782,12 +782,45 @@ const result = await client.find({ slug: 'posts', query: query });
 | `depth` | `options: { value: number }` | Population depth for relationships. |
 | `locale` | `options: { value: string }` | Locale for localized fields. |
 | `fallbackLocale` | `options: { value: string }` | Fallback locale. |
-| `select` | `options: { fields: string[] }` | Fields to include in response. |
+| `select` | `options: { fields: string[] }` | Mark fields for inclusion. Supports dot notation. |
+| `exclude` | `options: { fields: string[] }` | Mark fields for exclusion. Supports dot notation. |
 | `populate` | `options: { fields: string[] }` | Relationships to populate. |
 | `where` | `options: { field, operator, value }` | Add a where condition. |
 | `and` | `options: { callback: (WhereBuilder) => void }` | Nested AND group. |
 | `or` | `options: { callback: (WhereBuilder) => void }` | Nested OR group. |
 | `join` | `options: { callback: (JoinBuilder) => void }` | Configure joins. |
+
+### SelectBuilder
+
+Composes field inclusion/exclusion entries into a nested structure that serializes to Payload's bracket notation (e.g. `select[group][number]=true`). Use dot notation to target nested fields — `'group.number'` is expanded into the correct nested structure automatically.
+
+`SelectBuilder` is used internally by `QueryBuilder`. The `select()` and `exclude()` methods on `QueryBuilder` delegate directly to it.
+
+#### Example
+```typescript
+// Include specific fields (lightweight listing)
+const query = new QueryBuilder()
+  .select({ fields: ['title', 'createdAt'] });
+
+// Include a nested field using dot notation
+const query = new QueryBuilder()
+  .select({ fields: ['title', 'group.number'] });
+// Serializes to: ?select[title]=true&select[group][number]=true
+
+// Exclude one expensive field, keep everything else
+const query = new QueryBuilder()
+  .exclude({ fields: ['content'] });
+
+// Mix inclusion and exclusion
+const query = new QueryBuilder()
+  .select({ fields: ['title', 'group.number'] })
+  .exclude({ fields: ['content'] });
+```
+
+| Method | Parameters | Description |
+|--------|-----------|-------------|
+| `select` | `options: { fields: string[] }` | Mark fields for inclusion. Supports dot notation. |
+| `exclude` | `options: { fields: string[] }` | Mark fields for exclusion. Supports dot notation. |
 
 ### WhereBuilder
 

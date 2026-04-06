@@ -1,6 +1,7 @@
 export * from './public/PayloadSDK.js';
 export * from './public/config/RequestConfig.js';
 export * from './public/query/JoinBuilder.js';
+export * from './public/query/SelectBuilder.js';
 export * from './public/query/WhereBuilder.js';
 export * from './public/query/QueryBuilder.js';
 export * from './public/PayloadError.js';
